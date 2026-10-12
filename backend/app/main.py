@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
@@ -157,3 +157,51 @@ if DIST_DIR.exists():
         if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
         return FileResponse(DIST_DIR / "index.html")
+else:
+    logger.warning(
+        f"Frontend dist papkasi topilmadi ({DIST_DIR}). "
+        "Iltimos, 'cd frontend && npm install && npm run build' buyrug'ini bajaring."
+    )
+
+    @app.get("/{full_path:path}")
+    async def no_dist_fallback(full_path: str):
+        return HTMLResponse(
+            """<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>ModelHub - Frontend yig'ilmagan</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #F7F5EE; color: #1F2937; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: white; padding: 32px; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); max-width: 580px; width: 100%; border: 1px solid #E5E7EB; }
+        h2 { color: #047857; margin-top: 0; font-size: 20px; }
+        p { line-height: 1.6; color: #4B5563; }
+        code { background: #F3F4F6; padding: 2px 6px; border-radius: 4px; font-size: 13px; color: #111827; }
+        pre { background: #1F2937; color: #10B981; padding: 12px 16px; border-radius: 8px; font-size: 14px; overflow-x: auto; margin: 8px 0; }
+        .step { margin-top: 18px; padding: 14px; background: #FAFAF9; border-radius: 10px; border: 1px solid #E5E7EB; }
+        a { color: #047857; font-weight: 600; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>⚠️ Frontend yig'ilmagan (Build qilinmagan)</h2>
+        <p>Loyiha yangi kompyuterga klon qilinganda <code>frontend/dist</code> papkasi topilmadi. Tizim ishlashi uchun quyidagilardan birini bajaring:</p>
+        <div class="step">
+            <b>1-variant. Production uchun yig'ish (Tavsiya etiladi):</b>
+            <pre>cd frontend
+npm install
+npm run build</pre>
+            Shundan so'ng serverni qayta ishga tushiring yoki sahifani yangilang.
+        </div>
+        <div class="step">
+            <b>2-variant. Ishlab chiquvchi (Dev) rejimi:</b>
+            <pre>cd frontend
+npm run dev</pre>
+            Brauzerda <a href="http://localhost:5173">http://localhost:5173</a> manzilini oching.
+        </div>
+    </div>
+</body>
+</html>""",
+            status_code=200
+        )

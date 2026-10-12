@@ -19,5 +19,5 @@ if __name__ == "__main__":
     print("\n" + "=" * 56)
     print(">>> Qwen UI Server ishga tushmoqda...")
     print(f">>> Manzil: http://{host}:{port}")
-    print("=" * 56 + "\n")
-    uvicorn.run("backend.app.main:app", host=host, port=port, reload=True)
+    reload_val = os.getenv("RELOAD", "true").lower() in ("true", "1")
+    uvicorn.run("backend.app.main:app", host=host, port=port, reload=reload_val)
