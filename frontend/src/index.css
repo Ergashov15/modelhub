@@ -1,0 +1,168 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+  height: 100vh;
+  background-color: #F7F5EE;
+  color: #1F2937;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.dark body {
+  background-color: #181816;
+  color: #ECEBE8;
+}
+
+#root {
+  height: 100vh;
+  width: 100vw;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Claude-style warm modern scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D8D7D1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #BCBBAF;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #3A3A36;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #4D4D47;
+}
+
+/* Custom Syntax Highlighting (Claude / Warm aesthetic) */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #8C8A82;
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: #6F6D66;
+}
+
+html.dark .token.punctuation {
+  color: #99978F;
+}
+
+/* Kalit so'zlar (keywords, def, assert, in, import, return) — binafsha / ko'k tusda */
+.token.keyword,
+.token.boolean,
+.token.selector,
+.token.important,
+.token.atrule {
+  color: #7B38A8;
+  font-weight: 600;
+}
+
+html.dark .token.keyword,
+html.dark .token.boolean,
+html.dark .token.selector,
+html.dark .token.important,
+html.dark .token.atrule {
+  color: #B392F0;
+}
+
+/* Matnlar (strings) — yashil / jigarrang tusda */
+.token.string,
+.token.char,
+.token.attr-value,
+.token.regex {
+  color: #2E7D32;
+}
+
+html.dark .token.string,
+html.dark .token.char,
+html.dark .token.attr-value,
+html.dark .token.regex {
+  color: #8BC34A;
+}
+
+/* Funksiyalar va sinflar — to'q rangda */
+.token.function,
+.token.class-name {
+  color: #1F1E1D;
+  font-weight: 600;
+}
+
+html.dark .token.function,
+html.dark .token.class-name {
+  color: #ECEBE8;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #B05A20;
+}
+
+html.dark .token.property,
+html.dark .token.tag,
+html.dark .token.constant,
+html.dark .token.symbol,
+html.dark .token.deleted {
+  color: #D97757;
+}
+
+.token.number {
+  color: #CC785C;
+}
+
+html.dark .token.number {
+  color: #E58A6E;
+}
+
+.token.operator,
+.token.entity,
+.token.url {
+  color: #005CC5;
+}
+
+html.dark .token.operator,
+html.dark .token.entity,
+html.dark .token.url {
+  color: #79B8FF;
+}
+
+.token.variable {
+  color: #24292E;
+}
+
+html.dark .token.variable {
+  color: #ECEBE8;
+}
