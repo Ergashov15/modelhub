@@ -34,6 +34,24 @@ export function App() {
   } = useChat(settings);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isWebSearchActive, setIsWebSearchActive] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('modelhub_web_search') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleToggleWebSearch = () => {
+    setIsWebSearchActive((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem('modelhub_web_search', String(next));
+      } catch {}
+      return next;
+    });
+  };
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
     if (typeof window !== 'undefined') {
       return window.innerWidth >= 768;
@@ -82,19 +100,19 @@ export function App() {
   const getThemeIcon = (theme: ThemeMode) => {
     switch (theme) {
       case 'light':
-        return <Sun className="w-4 h-4 text-[#CC785C]" />;
+        return <Sun className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#CC785C]" />;
       case 'dark':
-        return <Moon className="w-4 h-4 text-[#D97757]" />;
+        return <Moon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#D97757]" />;
       case 'system':
       default:
-        return <Monitor className="w-4 h-4 text-[#6F6D66] dark:text-[#99978F]" />;
+        return <Monitor className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#6F6D66] dark:text-[#99978F]" />;
     }
   };
 
   const [insertedCode, setInsertedCode] = useState<string>('');
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F7F5EE] dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased">
+    <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased">
       {/* Sidebar */}
       <Sidebar
         conversations={conversations}
@@ -122,19 +140,19 @@ export function App() {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative">
+      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
         {/* Top Navbar: z-30 ensures dropdown and controls float on top of chat content */}
-        <header className="relative z-30 h-14 border-b border-[#E5E7EB] dark:border-[#333330] bg-[#F7F5EE]/90 dark:bg-[#181816]/90 backdrop-blur-md px-4 flex items-center justify-between shrink-0">
+        <header className="relative z-30 h-15 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0">
           <div className="flex items-center">
             {!isSidebarOpen && (
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-1.5 rounded-lg text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#EFECE4] dark:hover:bg-[#252522] shrink-0 transition-colors"
+                className="p-2 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors"
                 title="Panelni ochish"
                 aria-label="Open sidebar"
               >
-                <PanelLeftOpen className="w-5 h-5" />
+                <PanelLeftOpen className="w-5.5 h-5.5" />
               </button>
             )}
           </div>
@@ -152,12 +170,12 @@ export function App() {
           </div>
 
           {/* Right Header Actions: Stable, fixed-dimension buttons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {/* Quick Theme Switcher */}
             <button
               type="button"
               onClick={handleCycleTheme}
-              className="w-8 h-8 rounded-lg bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs"
               title={`${t('theme')}: ${
                 settings.theme === 'light'
                   ? t('themeLight')
@@ -173,7 +191,7 @@ export function App() {
             <button
               type="button"
               onClick={handleCycleLanguage}
-              className="w-12 h-8 rounded-lg bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs font-mono font-medium text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none"
+              className="w-13 h-9 sm:w-14 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none"
               title={`${t('language')}: ${settings.language || 'uz'}`}
             >
               <span>{getLanguageCode(settings.language || 'uz')}</span>
@@ -197,17 +215,19 @@ export function App() {
               onOpenSettings={() => setIsSettingsOpen(true)}
               isCentered={false}
               insertedText={insertedCode}
+              isWebSearchActive={isWebSearchActive}
+              onToggleWebSearch={handleToggleWebSearch}
             />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-2xl mx-auto -mt-10 sm:-mt-16 animate-in fade-in duration-200">
+          <div className="flex-1 flex flex-col items-center justify-center px-4 w-full max-w-4xl lg:max-w-5xl mx-auto -mt-10 sm:-mt-16 animate-in fade-in duration-200">
             {/* Centered ModelHub Brand Mark */}
-            <div className="mb-4 sm:mb-5 transition-transform hover:scale-105 duration-200">
-              <ModelHubLogo size="lg" showText={false} />
+            <div className="mb-4 sm:mb-6 transition-transform hover:scale-105 duration-200">
+              <ModelHubLogo size="xl" showText={false} />
             </div>
 
             {/* Centered Greeting: "Welcome" / "Xush kelibsiz" */}
-            <h1 className="text-3xl sm:text-4xl font-serif font-medium text-[#1F2937] dark:text-[#ECEBE8] tracking-tight mb-6 sm:mb-8 text-center select-none">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-medium text-[#1F2937] dark:text-[#ECEBE8] tracking-tight mb-6 sm:mb-8 text-center select-none">
               {t('welcomeTitle')}
             </h1>
 
@@ -220,6 +240,8 @@ export function App() {
               onOpenSettings={() => setIsSettingsOpen(true)}
               isCentered={true}
               insertedText={insertedCode}
+              isWebSearchActive={isWebSearchActive}
+              onToggleWebSearch={handleToggleWebSearch}
             />
           </div>
         )}

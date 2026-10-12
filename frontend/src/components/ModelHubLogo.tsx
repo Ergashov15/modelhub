@@ -15,10 +15,10 @@ export const ModelHubLogo: React.FC<ModelHubLogoProps> = ({
 }) => {
   // Dimension definitions
   const sizeClasses = {
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
-    xl: 'w-16 h-16',
+    sm: 'w-9 h-9',
+    md: 'w-11 h-11',
+    lg: 'w-14 h-14',
+    xl: 'w-20 h-20',
   }[size];
 
   const roundedClasses = {
@@ -29,7 +29,7 @@ export const ModelHubLogo: React.FC<ModelHubLogoProps> = ({
   }[size];
 
   return (
-    <div className={`flex items-center gap-2.5 select-none ${className}`}>
+    <div className={`flex items-center gap-3 select-none ${className}`}>
       {/* Logo Mark: Squircle with Emerald Neural Nexus */}
       <div
         className={`${sizeClasses} ${roundedClasses} relative flex items-center justify-center shrink-0 shadow-sm overflow-hidden transition-transform duration-200`}
@@ -114,16 +114,16 @@ export const ModelHubLogo: React.FC<ModelHubLogoProps> = ({
       {showText && (
         <div className="flex flex-col min-w-0">
           <div className="flex items-center gap-1.5 leading-none">
-            <span className="font-bold text-[15px] sm:text-base tracking-tight text-[#1F2937] dark:text-[#ECEBE8]">
+            <span className="font-bold text-base sm:text-lg tracking-tight text-[#1F2937] dark:text-[#ECEBE8]">
               Model<span className="text-[#047857] dark:text-[#34D399]">Hub</span>
             </span>
             {showBadge && (
-              <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 rounded bg-[#E6F4EA] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#6EE7B7] border border-[#86EFAC]/50">
+              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#E6F4EA] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#6EE7B7] border border-[#86EFAC]/50">
                 AI
               </span>
             )}
           </div>
-          <span className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] font-medium tracking-wide mt-1 leading-none">
+          <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF] font-medium tracking-wide mt-1 leading-none">
             Workspace
           </span>
         </div>

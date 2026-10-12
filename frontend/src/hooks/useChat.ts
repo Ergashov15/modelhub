@@ -230,8 +230,17 @@ export function useChat(settings: Settings) {
     }
 
     currentMessages.forEach((m) => {
+      // Skip errored or empty messages from LLM context
+      if (m.error) return;
+
+      // Clean internal thinking tags from previous assistant turns so context stays continuous
+      let cleanContent = m.content || '';
+      if (m.role === 'assistant') {
+        cleanContent = cleanContent.replace(/<think>[\s\S]*?(?:<\/think>|$)/g, '').trim();
+      }
+
       if (m.attachments && m.attachments.length > 0) {
-        let msgText = m.content;
+        let msgText = cleanContent;
         const textFiles = m.attachments.filter((a) => !a.isImage && a.content);
         if (textFiles.length > 0) {
           const context = textFiles.map((f) => `[File: ${f.name}]\n\`\`\`\n${f.content}\n\`\`\``).join('\n\n');
@@ -249,10 +258,14 @@ export function useChat(settings: Settings) {
           });
           apiMessages.push({ role: m.role, content: contentParts });
         } else {
-          apiMessages.push({ role: m.role, content: msgText });
+          if (msgText.trim()) {
+            apiMessages.push({ role: m.role, content: msgText });
+          }
         }
       } else {
-        apiMessages.push({ role: m.role, content: m.content });
+        if (cleanContent.trim()) {
+          apiMessages.push({ role: m.role, content: cleanContent });
+        }
       }
     });
 

@@ -141,27 +141,27 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   };
 
   return (
-    <div className="my-3 rounded-2xl bg-[#F7F5EE] dark:bg-[#181816] border border-[#E5E7EB] dark:border-[#2C2C29] overflow-hidden shadow-2xs font-sans text-xs">
+    <div className="w-full my-3.5 rounded-2xl bg-[#F9FAFB] dark:bg-[#181816] border border-[#E5E7EB] dark:border-[#2C2C29] overflow-hidden shadow-2xs font-sans text-sm">
       {/* Code Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2 border-b border-[#E5E7EB] dark:border-[#2C2C29] bg-[#EFECE4]/75 dark:bg-[#141412]/85 select-none">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E5E7EB] dark:border-[#2C2C29] bg-[#F3F4F6]/80 dark:bg-[#141412]/85 select-none">
         {/* Left: </> icon + Language Name */}
         <div className="flex items-center gap-2">
-          <Code2 className="w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF]" />
-          <span className="text-xs font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
+          <Code2 className="w-4.5 h-4.5 text-[#6B7280] dark:text-[#9CA3AF]" />
+          <span className="text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
             {langDisplayName}
           </span>
         </div>
 
         {/* Right: Action Buttons (Insert / Copy / Run) */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
           {/* 1. Insert into chat / editor button */}
           <button
             type="button"
             onClick={handleInsert}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E4E0D5] dark:hover:bg-[#252522] transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors"
             title={t('insertCode')}
           >
-            <ArrowDownToLine className="w-3.5 h-3.5 text-[#047857] dark:text-[#34D399]" />
+            <ArrowDownToLine className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
             <span className="hidden sm:inline">{inserted ? t('codeInserted') : t('insertCode')}</span>
           </button>
 
@@ -169,17 +169,17 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E4E0D5] dark:hover:bg-[#252522] transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors"
             title={t('copy')}
           >
             {copied ? (
               <>
-                <Check className="w-3.5 h-3.5 text-[#047857]" />
+                <Check className="w-4 h-4 text-[#047857]" />
                 <span className="text-[#047857] font-semibold">{t('copied')}</span>
               </>
             ) : (
               <>
-                <Copy className="w-3.5 h-3.5" />
+                <Copy className="w-4 h-4" />
                 <span className="hidden sm:inline">{t('copy')}</span>
               </>
             )}
@@ -190,13 +190,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
             type="button"
             onClick={handleRun}
             disabled={isRunning}
-            className="group flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white dark:bg-[#222220] hover:bg-[#047857] hover:text-white border border-[#E5E7EB] dark:border-[#333330] hover:border-[#047857] text-[#1F2937] dark:text-[#ECEBE8] transition-colors shadow-2xs ml-1 disabled:opacity-50"
+            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold bg-white dark:bg-[#222220] hover:bg-[#047857] hover:text-white border border-[#E5E7EB] dark:border-[#333330] hover:border-[#047857] text-[#1F2937] dark:text-[#ECEBE8] transition-colors shadow-2xs ml-1 disabled:opacity-50"
             title={t('runCode')}
           >
             {isRunning ? (
-              <RefreshCw className="w-3 h-3 animate-spin text-[#047857] group-hover:text-white" />
+              <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#047857] group-hover:text-white" />
             ) : (
-              <Play className="w-3 h-3 fill-current text-[#047857] group-hover:text-white" />
+              <Play className="w-3.5 h-3.5 fill-current text-[#047857] group-hover:text-white" />
             )}
             <span>{t('runCode')}</span>
           </button>
@@ -204,23 +204,23 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
       </div>
 
       {/* Code Body */}
-      <div className="p-4 overflow-x-auto max-h-[520px] overflow-y-auto font-mono text-xs md:text-[13px] leading-relaxed selection:bg-[#E6F4EA]">
-        <pre className="m-0 p-0 bg-transparent">
-          <code dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
+      <div className="w-full p-4 overflow-x-auto max-h-[520px] overflow-y-auto font-mono text-[13px] sm:text-sm leading-relaxed selection:bg-[#E6F4EA]">
+        <pre className="w-full m-0 p-0 bg-transparent">
+          <code className="block w-full" dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
         </pre>
       </div>
 
       {/* Interactive Execution Output Console Drawer */}
       {outputOpen && (
-        <div className="border-t border-[#E5E7EB] dark:border-[#2C2C29] bg-[#141412] text-[#E0DFD5] p-3 font-mono text-xs rounded-b-2xl animate-in fade-in duration-150">
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2C2C29] text-[11px] text-[#8C8A82]">
-            <div className="flex items-center gap-1.5">
-              <Terminal className="w-3.5 h-3.5 text-[#047857] dark:text-[#34D399]" />
+        <div className="border-t border-[#E5E7EB] dark:border-[#2C2C29] bg-[#141412] text-[#E0DFD5] p-3.5 font-mono text-xs sm:text-sm rounded-b-2xl animate-in fade-in duration-150">
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-[#2C2C29] text-xs text-[#8C8A82]">
+            <div className="flex items-center gap-2">
+              <Terminal className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
               <span className="font-semibold text-[#ECEBE8]">
                 {t('output')} ({langDisplayName})
               </span>
               {executionTime && (
-                <span className="text-[10px] text-[#5B8A6E] bg-[#5B8A6E]/15 px-1.5 py-0.2 rounded font-sans">
+                <span className="text-[11px] text-[#5B8A6E] bg-[#5B8A6E]/15 px-2 py-0.5 rounded font-sans">
                   ● {executionTime}
                 </span>
               )}
@@ -231,14 +231,14 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
               className="p-1 text-[#8C8A82] hover:text-[#ECEBE8] hover:bg-[#222220] rounded transition-colors"
               title={t('clearOutput')}
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="space-y-1 max-h-36 overflow-y-auto text-[#D6D5CD] leading-normal">
+          <div className="space-y-1.5 max-h-40 overflow-y-auto text-[#D6D5CD] leading-normal">
             {isRunning ? (
               <div className="flex items-center gap-2 text-[#8C8A82] py-1">
-                <RefreshCw className="w-3 h-3 animate-spin text-[#CC785C]" />
+                <RefreshCw className="w-3.5 h-3.5 animate-spin text-[#CC785C]" />
                 <span>{t('runningCode')}</span>
               </div>
             ) : outputLogs.length > 0 ? (

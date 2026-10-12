@@ -71,17 +71,17 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2 py-1.5 px-2.5 rounded-lg border text-xs transition-colors shadow-2xs select-none max-w-[200px] sm:max-w-[240px] ${
+        className={`flex items-center gap-2.5 py-2 px-3.5 rounded-xl border text-sm transition-colors shadow-2xs select-none max-w-[220px] sm:max-w-[280px] ${
           isOpen
             ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/30 border-[#86EFAC] dark:border-[#059669]/60 text-[#1F2937] dark:text-[#ECEBE8]'
             : 'bg-white dark:bg-[#1E1E1C] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8]'
         }`}
         title={t('switchModel')}
       >
-        <Cpu className="w-3.5 h-3.5 text-[#047857] dark:text-[#34D399] shrink-0" />
-        <span className="font-medium truncate text-left">{displayName}</span>
+        <Cpu className="w-4 h-4 text-[#047857] dark:text-[#34D399] shrink-0" />
+        <span className="font-semibold truncate text-left">{displayName}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
+          className={`w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -89,21 +89,21 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
       {/* Dropdown Menu - explicitly floats on top of all chat elements */}
       {isOpen && (
-        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-72 sm:w-80 rounded-2xl bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] shadow-lg z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-          {/* Sarlavha qismi: "SAQLANGAN MODELLAR" matni yuqoridagi neytral och fonda turadi (#EFECE4) */}
-          <div className="px-3.5 py-2.5 border-b border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between bg-[#EFECE4] dark:bg-[#252522]">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">
+        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-80 sm:w-88 rounded-2xl bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          {/* Sarlavha qismi: "SAQLANGAN MODELLAR" matni yuqoridagi neytral och fonda turadi */}
+          <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between bg-[#F3F4F6] dark:bg-[#252522]">
+            <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">
               {t('savedModels')}
             </span>
-            <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-md bg-[#E6F4EA] text-[#047857] border border-[#86EFAC] font-medium dark:bg-[#064E3B]/40 dark:text-[#6EE7B7] dark:border-[#059669]/50">
+            <span className="text-xs font-mono px-2 py-0.5 rounded-md bg-[#E6F4EA] text-[#047857] border border-[#86EFAC] font-semibold dark:bg-[#064E3B]/40 dark:text-[#6EE7B7] dark:border-[#059669]/50">
               {effectiveModels.length}
             </span>
           </div>
 
           {/* Model List */}
-          <div className="max-h-60 overflow-y-auto p-1.5 space-y-1">
+          <div className="max-h-64 overflow-y-auto p-2 space-y-1">
             {effectiveModels.length === 0 ? (
-              <div className="py-4 text-center text-xs text-[#6B7280] dark:text-[#9CA3AF]">
+              <div className="py-4 text-center text-sm text-[#6B7280] dark:text-[#9CA3AF]">
                 {t('noSavedModels')}
               </div>
             ) : (
@@ -117,27 +117,27 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                       onSelectModel(m.id);
                       setIsOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between p-2.5 rounded-xl text-xs text-left transition-colors ${
+                    className={`w-full flex items-center justify-between p-3 rounded-xl text-sm text-left transition-colors ${
                       isActive
                         ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/30 text-[#1F2937] dark:text-[#ECEBE8] border border-[#86EFAC] dark:border-[#059669]/60 shadow-2xs'
                         : 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#C5C3BA] hover:bg-[#F9FAFB] dark:hover:bg-[#262624] hover:text-[#1F2937] dark:hover:text-[#ECEBE8]'
                     }`}
                   >
                     <div className="min-w-0 pr-2">
-                      <div className="font-medium text-xs text-[#1F2937] dark:text-[#ECEBE8] truncate flex items-center gap-1.5">
+                      <div className="font-semibold text-sm text-[#1F2937] dark:text-[#ECEBE8] truncate flex items-center gap-2">
                         <span>{m.name || m.model}</span>
                         {isActive && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#047857] text-white font-mono font-medium">
+                          <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#047857] text-white font-mono font-medium">
                             {t('activeModelBadge')}
                           </span>
                         )}
                       </div>
-                      <div className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] font-mono truncate mt-0.5">
+                      <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF] font-mono truncate mt-0.5">
                         {m.model}
                       </div>
                     </div>
                     {isActive && (
-                      <Check className="w-4 h-4 text-[#047857] dark:text-[#34D399] shrink-0 stroke-[2.5]" />
+                      <Check className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399] shrink-0 stroke-[2.5]" />
                     )}
                   </button>
                 );
@@ -146,16 +146,16 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
           </div>
 
           {/* Footer: Add Model / Open Settings */}
-          <div className="p-1.5 border-t border-[#E5E7EB] dark:border-[#333330] bg-[#FAF9F5]/60 dark:bg-[#181816]/60">
+          <div className="p-2 border-t border-[#E5E7EB] dark:border-[#333330] bg-[#F9FAFB] dark:bg-[#181816]/60">
             <button
               type="button"
               onClick={() => {
                 setIsOpen(false);
                 onOpenSettings();
               }}
-              className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-medium text-[#1F2937] dark:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#262624] transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#262624] transition-colors"
             >
-              <Plus className="w-3.5 h-3.5 text-[#047857] dark:text-[#34D399]" />
+              <Plus className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
               <span>{t('addModelBtn')} / {t('settings')}</span>
             </button>
           </div>
