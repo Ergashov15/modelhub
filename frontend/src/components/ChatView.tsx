@@ -243,14 +243,19 @@ export const ChatView: React.FC<ChatViewProps> = ({
   settings,
   onInsertCode,
 }) => {
-  const scrollEndRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [previewModal, setPreviewModal] = useState<{ url: string; name: string } | null>(null);
 
   const t = (key: TranslationKey) => getTranslation(settings.language, key);
 
   useEffect(() => {
-    scrollEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (containerRef.current) {
+      containerRef.current.scrollTo({
+        top: containerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
   }, [messages]);
 
   // Handle ESC key to close image preview modal
@@ -291,7 +296,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   }
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto w-full no-scrollbar">
+    <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto w-full no-scrollbar">
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8 space-y-5 sm:space-y-7">
         {messages.map((message, index) => {
           const isUser = message.role === 'user';
@@ -448,7 +453,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
             </div>
           );
         })}
-        <div ref={scrollEndRef} className="h-2" />
+        <div className="h-2" />
       </div>
 
       {/* Lightbox Preview Modal for attached images */}

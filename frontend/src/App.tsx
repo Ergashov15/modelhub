@@ -149,7 +149,7 @@ export function App() {
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
+      <div className="flex-1 min-h-0 flex flex-col overflow-hidden relative bg-white dark:bg-[#181816]">
         {/* Top Navbar: Responsive flex on mobile with safe area padding */}
         <header className="sticky top-0 z-30 min-h-14 sm:min-h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-2.5 sm:px-6 pt-safe flex items-center justify-between gap-1.5 sm:gap-2 shrink-0">
           {/* Left: Sidebar toggle button (visible on mobile, and on desktop only when sidebar is closed) */}

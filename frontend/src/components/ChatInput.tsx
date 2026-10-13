@@ -329,7 +329,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className={
         isCentered
           ? 'w-full max-w-4xl mx-auto px-1'
-          : 'w-full bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-3 sm:pt-4 pb-2 sm:pb-3 pb-safe'
+          : 'w-full shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-2.5 sm:pt-4 pb-2 sm:pb-3 pb-safe'
       }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
