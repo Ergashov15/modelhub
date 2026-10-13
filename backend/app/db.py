@@ -7,7 +7,11 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from typing import Optional, Dict, Any, List
 
-DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+env_data_dir = os.environ.get("DATA_DIR")
+if env_data_dir:
+    DATA_DIR = Path(env_data_dir)
+else:
+    DATA_DIR = Path(__file__).resolve().parent.parent / "data"
 DB_PATH = DATA_DIR / "modelhub.db"
 
 def get_db_connection() -> sqlite3.Connection:

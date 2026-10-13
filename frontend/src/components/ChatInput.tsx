@@ -335,10 +335,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div className={isCentered ? 'w-full' : 'w-full max-w-3xl lg:max-w-4xl mx-auto px-3 sm:px-4'}>
+      <div className={isCentered ? 'w-full' : 'w-full max-w-3xl lg:max-w-4xl mx-auto px-2 sm:px-4'}>
         <div
           onPaste={handlePaste}
-          className={`relative w-full rounded-3xl bg-white dark:bg-[#20201E] border transition-all ${
+          className={`relative w-full rounded-2xl sm:rounded-3xl bg-white dark:bg-[#20201E] border transition-all ${
             isDraggingOver
               ? 'border-[#047857] ring-2 ring-[#047857]/40 bg-[#F0FDF4] dark:bg-[#064E3B]/20'
               : 'border-[#E5E7EB] dark:border-[#333330] focus-within:border-[#047857] focus-within:ring-2 focus-within:ring-[#047857]/20'
@@ -433,14 +433,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             </div>
           )}
 
-          {/* Input & Action controls row */}
-          <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 sm:py-2">
+          {/* Input & Action controls row: items-end ensures alignment when typing multiline on mobile */}
+          <div className="flex items-end gap-1.5 sm:gap-2 px-2 sm:px-3.5 py-1.5 sm:py-2">
             {/* File attachment button */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isStreaming || isProcessingMedia}
-              className="p-2 sm:p-2.5 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#333330] transition-colors shrink-0 disabled:opacity-40 touch-manipulation"
+              className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#333330] transition-colors shrink-0 disabled:opacity-40 touch-manipulation mb-0.5 sm:mb-0"
               title={`${t('attachFile')} (rasmlar, video, hujjatlar)`}
             >
               <Paperclip className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#047857] dark:text-[#34D399]" />
@@ -451,7 +451,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               type="button"
               onClick={onToggleWebSearch}
               disabled={isStreaming}
-              className={`flex items-center gap-1.5 sm:gap-2 p-2 sm:px-3 sm:py-2 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 select-none touch-manipulation ${
+              className={`h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 select-none touch-manipulation mb-0.5 sm:mb-0 ${
                 isWebSearchActive
                   ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/60 text-[#047857] dark:text-[#34D399] border border-[#86EFAC] shadow-2xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#333330] border border-transparent'
@@ -483,18 +483,18 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               placeholder={placeholderText}
               rows={1}
               disabled={isStreaming}
-              className={`flex-1 bg-transparent text-[#1F2937] dark:text-[#ECEBE8] placeholder-[#9CA3AF] dark:placeholder-[#6B7280] resize-none focus:outline-none font-sans py-2 sm:py-2.5 max-h-[160px] leading-normal self-center text-base ${
+              className={`flex-1 bg-transparent text-[#1F2937] dark:text-[#ECEBE8] placeholder-[#9CA3AF] dark:placeholder-[#6B7280] resize-none focus:outline-none font-sans py-2 sm:py-2.5 max-h-[140px] sm:max-h-[160px] leading-relaxed text-base ${
                 isCentered ? 'sm:text-lg' : 'sm:text-base'
               }`}
             />
 
             {/* Send / Stop button */}
-            <div className="shrink-0 flex items-center">
+            <div className="shrink-0 flex items-center mb-0.5 sm:mb-0">
               {isStreaming ? (
                 <button
                   type="button"
                   onClick={onStop}
-                  className="p-2 sm:p-2.5 rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-2xs transition-colors touch-manipulation"
+                  className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-2xs transition-colors touch-manipulation"
                   title={t('stop')}
                 >
                   <Square className="w-4 h-4 fill-current" />
@@ -504,7 +504,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
                   type="button"
                   onClick={handleSend}
                   disabled={(!input.trim() && attachments.length === 0) || isProcessingMedia}
-                  className="p-2 sm:p-2.5 rounded-xl bg-[#047857] hover:bg-[#065F46] disabled:opacity-30 disabled:hover:bg-[#047857] text-white shadow-2xs transition-colors touch-manipulation"
+                  className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl bg-[#047857] hover:bg-[#065F46] disabled:opacity-30 disabled:hover:bg-[#047857] text-white shadow-2xs transition-colors touch-manipulation"
                   title={t('send')}
                 >
                   <Send className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
@@ -516,7 +516,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* ChatGPT Style Disclaimer under the input bar */}
         {!isCentered && (
-          <p className="text-[11px] text-center text-[#9CA3AF] dark:text-[#6B7280] pt-2 pb-1 select-none tracking-tight">
+          <p className="text-[10px] sm:text-[11px] text-center text-[#9CA3AF] dark:text-[#6B7280] pt-1.5 pb-0.5 select-none tracking-tight">
             {t('disclaimer')}
           </p>
         )}
