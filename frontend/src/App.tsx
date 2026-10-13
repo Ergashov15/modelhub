@@ -3,7 +3,8 @@ import {
   PanelLeftOpen, 
   Sun, 
   Moon, 
-  Monitor
+  Monitor,
+  RotateCw
 } from 'lucide-react';
 import { useSettings } from './hooks/useSettings';
 import { useChat } from './hooks/useChat';
@@ -107,12 +108,12 @@ export function App() {
   const getThemeIcon = (theme: ThemeMode) => {
     switch (theme) {
       case 'light':
-        return <Sun className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#CC785C]" />;
+        return <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-[#CC785C]" />;
       case 'dark':
-        return <Moon className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#D97757]" />;
+        return <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97757]" />;
       case 'system':
       default:
-        return <Monitor className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#6F6D66] dark:text-[#99978F]" />;
+        return <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-[#6F6D66] dark:text-[#99978F]" />;
     }
   };
 
@@ -149,25 +150,25 @@ export function App() {
 
       {/* Main Chat Area */}
       <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
-        {/* Top Navbar: Responsive flex on mobile to prevent overlapping */}
-        <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 shrink-0">
-          {/* Left: Sidebar toggle button (only visible when sidebar is closed) */}
+        {/* Top Navbar: Responsive flex on mobile with safe area padding */}
+        <header className="sticky top-0 z-30 min-h-14 sm:min-h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-2.5 sm:px-6 pt-safe flex items-center justify-between gap-1.5 sm:gap-2 shrink-0">
+          {/* Left: Sidebar toggle button (visible on mobile, and on desktop only when sidebar is closed) */}
           <div className="flex items-center min-w-[36px] sm:min-w-0">
             {!isSidebarOpen && (
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-2 sm:p-2.5 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors touch-manipulation"
-                title="Panelni ochish"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center shrink-0 transition-colors shadow-2xs touch-manipulation"
+                title={t('openSidebar')}
                 aria-label="Open sidebar"
               >
-                <PanelLeftOpen className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+                <PanelLeftOpen className="w-5 h-5 text-[#047857] dark:text-[#34D399]" />
               </button>
             )}
           </div>
 
           {/* Center: Model Selector (Flexes on mobile, absolutely centered on desktop) */}
-          <div className="flex items-center justify-center flex-1 sm:flex-initial sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-40 px-1">
+          <div className="flex items-center justify-center flex-1 min-w-0 px-1 sm:px-2 sm:absolute sm:left-1/2 sm:-translate-x-1/2 sm:flex-initial z-40">
             <ModelSelector
               models={settings.models || []}
               activeModelId={settings.activeModelId}
@@ -178,13 +179,24 @@ export function App() {
             />
           </div>
 
-          {/* Right Header Actions: Compact on mobile */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Quick Theme Switcher */}
+          {/* Right Header Actions: Refresh + Theme + Language */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+            {/* Quick Refresh Button: Allows instant page refresh on mobile & desktop */}
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#6B7280] hover:text-[#047857] dark:text-[#9CA3AF] dark:hover:text-[#34D399] flex items-center justify-center transition-colors shadow-2xs touch-manipulation"
+              title={t('refreshPage')}
+              aria-label="Refresh page"
+            >
+              <RotateCw className="w-4 h-4" />
+            </button>
+
+            {/* Quick Theme Switcher (System / Light / Dark) */}
             <button
               type="button"
               onClick={handleCycleTheme}
-              className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs touch-manipulation"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-2xs touch-manipulation"
               title={`${t('theme')}: ${
                 settings.theme === 'light'
                   ? t('themeLight')
@@ -196,11 +208,11 @@ export function App() {
               {getThemeIcon(settings.theme || 'system')}
             </button>
 
-            {/* Quick Language Switcher */}
+            {/* Quick Language Switcher (UZ / ENG / RU) */}
             <button
               type="button"
               onClick={handleCycleLanguage}
-              className="w-11 h-8.5 sm:w-14 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none touch-manipulation"
+              className="w-10 h-9 sm:w-12 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-2xs select-none touch-manipulation"
               title={`${t('language')}: ${settings.language || 'uz'}`}
             >
               <span>{getLanguageCode(settings.language || 'uz')}</span>

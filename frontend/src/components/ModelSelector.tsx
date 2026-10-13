@@ -59,17 +59,17 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-1.5 sm:gap-2.5 py-1.5 px-2.5 sm:py-2 sm:px-3.5 rounded-xl border text-xs sm:text-sm transition-colors shadow-2xs select-none max-w-[160px] xs:max-w-[190px] sm:max-w-[280px] touch-manipulation ${
+        className={`flex items-center gap-1.5 sm:gap-2 py-1.5 px-2 sm:py-2 sm:px-3 rounded-xl border text-xs sm:text-sm transition-colors shadow-2xs select-none max-w-[130px] sm:max-w-[280px] touch-manipulation ${
           isOpen
             ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/30 border-[#86EFAC] dark:border-[#059669]/60 text-[#1F2937] dark:text-[#ECEBE8]'
             : 'bg-white dark:bg-[#1E1E1C] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8]'
         }`}
         title={t('switchModel')}
       >
-        <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#047857] dark:text-[#34D399] shrink-0" />
+        <Cpu className="w-4 h-4 text-[#047857] dark:text-[#34D399] shrink-0" />
         <span className="font-semibold truncate text-left">{displayName}</span>
         <ChevronDown
-          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
+          className={`w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -142,7 +142,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                         </div>
                       </div>
                       {isActive && (
-                        <Check className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399] shrink-0 stroke-[2.5]" />
+                        <Check className="w-5 h-5 text-[#047857] dark:text-[#34D399] shrink-0 stroke-[2.5]" />
                       )}
                     </button>
                   );

@@ -106,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title={t('search')}
             aria-label="Search"
           >
-            <Search className="w-4.5 h-4.5" />
+            <Search className="w-5 h-5" />
           </button>
           <button
             type="button"
@@ -115,7 +115,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             title={t('closeSidebar')}
             aria-label="Close sidebar"
           >
-            <PanelLeftClose className="w-4.5 h-4.5" />
+            <PanelLeftClose className="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -154,7 +154,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-full py-2.5 px-3.5 rounded-xl bg-white hover:bg-[#F9FAFB] dark:bg-[#20201E] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#353531] text-[#1F2937] dark:text-[#ECEBE8] text-sm font-medium flex items-center justify-between transition-colors shadow-2xs group mb-2.5"
         >
           <span className="flex items-center gap-2.5">
-            <SquarePen className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399] transition-colors" />
+            <SquarePen className="w-5 h-5 text-[#047857] dark:text-[#34D399] transition-colors" />
             <span>{t('newChat')}</span>
           </span>
         </button>
