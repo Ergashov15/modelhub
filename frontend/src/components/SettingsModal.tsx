@@ -812,6 +812,12 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                         placeholder="http://localhost:11434 yoki http://localhost:8000/v1"
                         className="w-full px-3 py-2 bg-white dark:bg-[#262624] border border-[#E5E7EB] dark:border-[#383835] rounded-xl text-sm font-mono text-[#1F2937] dark:text-[#ECEBE8] focus:outline-none focus:border-[#047857]"
                       />
+                      {(newModelEndpoint.toLowerCase().includes('localhost') || newModelEndpoint.includes('127.0.0.1')) && (
+                        <div className="mt-1.5 p-2 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-1.5">
+                          <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                          <span>{t('localhostWarning')}</span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex justify-end gap-2.5 pt-1.5">
                       <button
@@ -851,6 +857,12 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                     placeholder={t('endpointPlaceholder')}
                     className="w-full px-3.5 py-2.5 bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#383835] rounded-xl text-[#1F2937] dark:text-[#ECEBE8] placeholder-[#9CA3AF] dark:placeholder-[#6B7280] focus:outline-none focus:border-[#047857] text-sm font-mono"
                   />
+                  {(endpoint.toLowerCase().includes('localhost') || endpoint.includes('127.0.0.1')) && (
+                    <div className="mt-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/40 text-amber-800 dark:text-amber-300 text-xs flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <span>{t('localhostWarning')}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>

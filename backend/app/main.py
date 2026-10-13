@@ -3,11 +3,19 @@ import json
 import logging
 from pathlib import Path
 from typing import Optional, Dict, Any, List
-from fastapi import FastAPI, HTTPException, Header
+from fastapi import FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
+
+from .security import (
+    validate_endpoint_url,
+    rate_limiter,
+    get_client_ip,
+    check_input_guardrail,
+    SYSTEM_SAFETY_INSTRUCTION
+)
 
 from .schemas import (
     ChatRequest, TestConnectionRequest, TestConnectionResponse, ModelsRequest,
@@ -153,10 +161,25 @@ async def delete_user_chat(
     return {"success": True}
 
 @app.post("/api/test-connection", response_model=TestConnectionResponse)
-async def test_connection(req: TestConnectionRequest):
+async def test_connection(req: TestConnectionRequest, request: Request):
     if not req.endpoint or not req.endpoint.strip():
         raise HTTPException(status_code=400, detail="Endpoint URL is required.")
-    
+
+    client_ip = get_client_ip(request)
+
+    # 1. Rate limiting (20 requests/min)
+    allowed, retry_after = rate_limiter.is_allowed(f"test:{client_ip}", max_requests=20, window_seconds=60)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Juda ko'p so'rovlar yuborildi. Iltimos, {retry_after} soniyadan so'ng qayta urinib ko'ring."
+        )
+
+    # 2. SSRF validation
+    is_valid, error_msg = validate_endpoint_url(req.endpoint)
+    if not is_valid:
+        return TestConnectionResponse(success=False, message=error_msg or "Xavfsizlik cheklovi", models=[])
+
     result = await test_endpoint_connection(
         endpoint=req.endpoint,
         api_key=req.api_key,
@@ -165,64 +188,150 @@ async def test_connection(req: TestConnectionRequest):
     return TestConnectionResponse(**result)
 
 @app.post("/api/models")
-async def get_models(req: ModelsRequest):
+async def get_models(req: ModelsRequest, request: Request):
     if not req.endpoint or not req.endpoint.strip():
         return {"models": []}
+
+    client_ip = get_client_ip(request)
+
+    # 1. Rate limiting (20 requests/min)
+    allowed, retry_after = rate_limiter.is_allowed(f"models:{client_ip}", max_requests=20, window_seconds=60)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Juda ko'p so'rovlar yuborildi. Iltimos, {retry_after} soniyadan so'ng qayta urinib ko'ring."
+        )
+
+    # 2. SSRF validation
+    is_valid, error_msg = validate_endpoint_url(req.endpoint)
+    if not is_valid:
+        return {"models": [], "error": error_msg}
+
     models = await fetch_available_models(endpoint=req.endpoint, api_key=req.api_key)
     return {"models": models}
 
 @app.post("/api/chat")
-async def chat_completion(req: ChatRequest):
+async def chat_completion(req: ChatRequest, request: Request):
     if not req.endpoint or not req.endpoint.strip():
         raise HTTPException(status_code=400, detail="Endpoint URL is required.")
     if not req.model or not req.model.strip():
         raise HTTPException(status_code=400, detail="Model name is required.")
 
+    client_ip = get_client_ip(request)
+
+    # 1. Rate Limiting for Chat (30 requests per min per IP)
+    allowed, retry_after = rate_limiter.is_allowed(f"chat:{client_ip}", max_requests=30, window_seconds=60)
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail=f"So'rovlar soni limiti oshdi. Iltimos, {retry_after} soniyadan so'ng qayta urinib ko'ring."
+        )
+
+    # 2. SSRF check on target endpoint
+    is_valid, endpoint_err = validate_endpoint_url(req.endpoint)
+    if not is_valid:
+        async def stream_ssrf_error():
+            err_data = {
+                "id": "ssrf-blocked",
+                "object": "chat.completion.chunk",
+                "choices": [{
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": f"⚠️ {endpoint_err}"},
+                    "finish_reason": "stop"
+                }]
+            }
+            yield f"data: {json.dumps(err_data)}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(stream_ssrf_error(), media_type="text/event-stream")
+
+    # 3. Input Guardrail (Strict check across all incoming messages to prevent hidden injection)
+    last_user_query = ""
+    for m in reversed(req.messages):
+        if m.role == "user":
+            if isinstance(m.content, str):
+                last_user_query = m.content
+            elif isinstance(m.content, list):
+                for part in m.content:
+                    if isinstance(part, dict) and part.get("type") == "text":
+                        last_user_query = part.get("text", "")
+                        break
+            break
+
+    # Combine text from all incoming messages to catch hidden exploits in conversation history
+    all_incoming_texts = []
+    for m in req.messages:
+        if isinstance(m.content, str):
+            all_incoming_texts.append(m.content)
+        elif isinstance(m.content, list):
+            for part in m.content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    all_incoming_texts.append(part.get("text", ""))
+
+    full_context_to_check = "\n".join(all_incoming_texts)
+
+    is_safe, refusal_reason = check_input_guardrail(full_context_to_check)
+    if not is_safe:
+        async def stream_refusal():
+            refusal_data = {
+                "id": "guardrail-refusal",
+                "object": "chat.completion.chunk",
+                "choices": [{
+                    "index": 0,
+                    "delta": {"role": "assistant", "content": refusal_reason},
+                    "finish_reason": "stop"
+                }]
+            }
+            yield f"data: {json.dumps(refusal_data)}\n\n"
+            yield "data: [DONE]\n\n"
+        return StreamingResponse(stream_refusal(), media_type="text/event-stream")
+
     messages_data = [m.model_dump() for m in req.messages]
     sources = []
 
-    # If Web Search is requested, search DuckDuckGo and augment context
-    if req.web_search:
-        search_query = ""
-        for m in reversed(req.messages):
-            if m.role == "user":
-                if isinstance(m.content, str):
-                    search_query = m.content
-                elif isinstance(m.content, list):
-                    for part in m.content:
-                        if isinstance(part, dict) and part.get("type") == "text":
-                            search_query = part.get("text", "")
-                            break
-                break
-
-        if search_query.strip():
-            logger.info(f"Web search activated for query: '{search_query.strip()}'")
+    # 4. Web Search Rate Limit & Execution
+    if req.web_search and last_user_query.strip():
+        search_allowed, _ = rate_limiter.is_allowed(f"search:{client_ip}", max_requests=10, window_seconds=60)
+        if not search_allowed:
+            logger.warning(f"Web search rate limit exceeded for IP: {client_ip}. Proceeding without search.")
+        else:
+            logger.info(f"Web search activated for query: '{last_user_query.strip()}'")
             try:
-                sources = await search_duckduckgo(search_query.strip(), max_results=5)
+                sources = await search_duckduckgo(last_user_query.strip(), max_results=5)
             except Exception as e:
                 logger.error(f"Web search failed: {e}")
 
-            if sources:
-                sources_text = "\n\n".join([
-                    f"[{idx+1}] Manba: {s['title']} ({s['url']})\n{s['snippet']}"
-                    for idx, s in enumerate(sources)
-                ])
-                web_instruction = (
-                    f"[Internet qidiruvi ma'lumotlari (Web Search Results)]:\n"
-                    f"{sources_text}\n\n"
-                    f"Yo'riqnoma: Yuqoridagi internet qidiruvi ma'lumotlariga tayangan holda foydalanuvchining savoliga to'g'ridan-to'g'ri, lo'nda va to'liq javob bering. "
-                    f"Muhim qoida: Javob matnining oxirida manbalar ro'yxatini qayta takrorlab yozmang (chunki tizim manbalarni avtomatik tarzda pastda ko'rsatadi). "
-                    f"Faqat matn ichidagi faktlar yoniga qaysi manbadan olinganini [1], [2] kabi ixcham ko'rsatkichlar bilan belgilab keting."
-                )
+        if sources:
+            sources_text = "\n\n".join([
+                f"[{idx+1}] Manba: {s['title']} ({s['url']})\n{s['snippet']}"
+                for idx, s in enumerate(sources)
+            ])
+            web_instruction = (
+                f"[Internet qidiruvi ma'lumotlari (Web Search Results)]:\n"
+                f"{sources_text}\n\n"
+                f"Yo'riqnoma: Yuqoridagi internet qidiruvi ma'lumotlariga tayangan holda foydalanuvchining savoliga to'g'ridan-to'g'ri, lo'nda va to'liq javob bering. "
+                f"Muhim qoida: Javob matnining oxirida manbalar ro'yxatini qayta takrorlab yozmang (chunki tizim manbalarni avtomatik tarzda pastda ko'rsatadi). "
+                f"Faqat matn ichidagi faktlar yoniga qaysi manbadan olinganini [1], [2] kabi ixcham ko'rsatkichlar bilan belgilab keting."
+            )
 
-                has_system = False
-                for m in messages_data:
-                    if m["role"] == "system":
-                        m["content"] = str(m["content"]) + f"\n\n{web_instruction}"
-                        has_system = True
-                        break
-                if not has_system:
-                    messages_data.insert(0, {"role": "system", "content": web_instruction})
+            has_system = False
+            for m in messages_data:
+                if m["role"] == "system":
+                    m["content"] = str(m["content"]) + f"\n\n{web_instruction}"
+                    has_system = True
+                    break
+            if not has_system:
+                messages_data.insert(0, {"role": "system", "content": web_instruction})
+
+    # 5. System Safety Instruction (Balanced)
+    has_system_safety = False
+    for m in messages_data:
+        if m["role"] == "system":
+            if SYSTEM_SAFETY_INSTRUCTION not in str(m["content"]):
+                m["content"] = f"{SYSTEM_SAFETY_INSTRUCTION}\n\n" + str(m["content"])
+            has_system_safety = True
+            break
+    if not has_system_safety:
+        messages_data.insert(0, {"role": "system", "content": SYSTEM_SAFETY_INSTRUCTION})
 
     payload = {
         "model": req.model,

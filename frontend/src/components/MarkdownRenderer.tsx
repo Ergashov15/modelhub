@@ -143,15 +143,19 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             const strChildren = String(children);
             const isCitation = /^\[?\d+\]?$/.test(strChildren.trim());
 
+            // Sanitize link protocol to prevent XSS (only allow http, https, mailto)
+            const safeHref = href && /^(https?:\/\/|mailto:)/i.test(href.trim()) ? href.trim() : '#';
+            const isSafe = safeHref !== '#';
+
             if (isCitation) {
               const cleanNum = strChildren.replace(/[[\]]/g, '');
               return (
                 <a
-                  href={href}
-                  target="_blank"
-                  rel="noreferrer"
+                  href={safeHref}
+                  target={isSafe ? "_blank" : undefined}
+                  rel={isSafe ? "noopener noreferrer" : undefined}
                   className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 mx-0.5 rounded-full bg-[#E6F4EA] dark:bg-[#064E3B]/60 text-[#047857] dark:text-[#34D399] hover:bg-[#047857] hover:text-white dark:hover:bg-[#34D399] dark:hover:text-[#181816] text-[10px] font-mono font-bold transition-all no-underline shadow-2xs align-baseline"
-                  title={href}
+                  title={safeHref}
                 >
                   {cleanNum}
                 </a>
@@ -160,9 +164,9 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
 
             return (
               <a
-                href={href}
-                target="_blank"
-                rel="noreferrer"
+                href={safeHref}
+                target={isSafe ? "_blank" : undefined}
+                rel={isSafe ? "noopener noreferrer" : undefined}
                 className="text-[#047857] hover:underline underline-offset-2 font-medium"
               >
                 {children}
