@@ -329,7 +329,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       className={
         isCentered
           ? 'w-full max-w-4xl mx-auto px-1'
-          : 'w-full shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-2.5 sm:pt-4 pb-2 sm:pb-3 pb-safe'
+          : 'w-full shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-2 sm:pt-4 pb-mobile-chat'
       }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -514,9 +514,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </div>
         </div>
 
-        {/* ChatGPT Style Disclaimer under the input bar */}
+        {/* ChatGPT Style Disclaimer under the input bar (Desktop only; hidden on mobile for clean thumb clearance) */}
         {!isCentered && (
-          <p className="text-[10px] sm:text-[11px] text-center text-[#9CA3AF] dark:text-[#6B7280] pt-1.5 pb-0.5 select-none tracking-tight">
+          <p className="hidden sm:block text-[11px] text-center text-[#9CA3AF] dark:text-[#6B7280] pt-1.5 pb-0.5 select-none tracking-tight">
             {t('disclaimer')}
           </p>
         )}

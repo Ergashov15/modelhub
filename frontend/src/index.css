@@ -17,7 +17,6 @@ body {
   overflow: hidden;
   height: 100vh;
   height: 100dvh;
-  min-height: -webkit-fill-available;
   background-color: #FFFFFF;
   color: #1F2937;
   -webkit-font-smoothing: antialiased;
@@ -46,10 +45,21 @@ html.dark #root {
 
 /* Safe area padding utilities for mobile notches and navigation bars */
 .pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0.75rem));
 }
 .pt-safe {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Mobile chat bottom spacing ensuring comfortable thumb reach above gesture bar/navigation */
+.pb-mobile-chat {
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 640px) {
+  .pb-mobile-chat {
+    padding-bottom: 0.75rem;
+  }
 }
 
 /* Hide scrollbar while preserving scroll functionality */

@@ -241,7 +241,7 @@ export function App() {
             />
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 w-full max-w-4xl lg:max-w-5xl mx-auto -mt-4 sm:-mt-16 animate-in fade-in duration-200">
+          <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 w-full max-w-4xl lg:max-w-5xl mx-auto -mt-10 sm:-mt-16 animate-in fade-in duration-200">
             {/* Centered ModelHub Brand Mark */}
             <div className="mb-4 sm:mb-6 transition-transform hover:scale-105 duration-200">
               <ModelHubLogo size="xl" showText={false} />
