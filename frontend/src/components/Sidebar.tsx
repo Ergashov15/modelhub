@@ -79,10 +79,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 h-full h-[100dvh] w-72 bg-white dark:bg-[#181816] border-r border-[#E5E7EB] dark:border-[#333330] flex flex-col transition-all duration-200 ease-in-out shrink-0 pt-safe pb-safe ${
+      className={`fixed inset-y-0 left-0 z-50 h-full h-[100dvh] w-72 bg-white dark:bg-[#181816] border-r border-[#E5E7EB] dark:border-[#333330] flex flex-col transition-all duration-200 ease-in-out shrink-0 ${
         isOpen
-          ? 'translate-x-0 md:relative md:w-72'
-          : '-translate-x-full md:translate-x-0 md:w-0 md:border-r-0 md:overflow-hidden'
+          ? 'translate-x-0 pointer-events-auto shadow-2xl md:relative md:w-72 md:shadow-none'
+          : '-translate-x-full pointer-events-none md:translate-x-0 md:w-0 md:border-r-0 md:overflow-hidden'
       }`}
     >
       {/* 1. Header (Yuqori qism) */}

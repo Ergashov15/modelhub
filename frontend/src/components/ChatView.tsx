@@ -291,7 +291,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto w-full no-scrollbar">
+    <div className="flex-1 min-h-0 overflow-y-auto w-full no-scrollbar">
       <div className="w-full max-w-4xl mx-auto px-3 sm:px-6 pt-4 sm:pt-6 pb-6 sm:pb-8 space-y-5 sm:space-y-7">
         {messages.map((message, index) => {
           const isUser = message.role === 'user';

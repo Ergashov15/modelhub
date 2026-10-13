@@ -144,14 +144,14 @@ export function App() {
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/30 dark:bg-black/60 z-30 md:hidden backdrop-blur-2xs transition-opacity"
+          className="fixed inset-0 bg-black/40 dark:bg-black/60 z-40 md:hidden backdrop-blur-2xs transition-opacity"
         />
       )}
 
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
-        {/* Top Navbar: Responsive flex on mobile to prevent overlapping */}
-        <header className="relative z-30 h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-2.5 sm:px-6 flex items-center justify-between gap-2 shrink-0 pt-safe">
+      <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
+        {/* Top Navbar: Sticky and robust on both mobile and desktop */}
+        <header className="sticky top-0 z-30 w-full h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-2.5 sm:px-6 flex items-center justify-between gap-2 shrink-0">
           {/* Left: Sidebar toggle button */}
           <div className="flex items-center min-w-[36px] sm:min-w-0">
             <button
