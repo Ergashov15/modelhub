@@ -3,8 +3,7 @@ import {
   PanelLeftOpen, 
   Sun, 
   Moon, 
-  Monitor,
-  SquarePen
+  Monitor
 } from 'lucide-react';
 import { useSettings } from './hooks/useSettings';
 import { useChat } from './hooks/useChat';
@@ -150,22 +149,24 @@ export function App() {
 
       {/* Main Chat Area */}
       <div className="flex-1 min-h-0 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
-        {/* Top Navbar: Sticky and robust on both mobile and desktop */}
-        <header className="sticky top-0 z-30 w-full h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-2.5 sm:px-6 flex items-center justify-between gap-2 shrink-0">
-          {/* Left: Sidebar toggle button */}
+        {/* Top Navbar: Responsive flex on mobile to prevent overlapping */}
+        <header className="sticky top-0 z-30 h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 shrink-0">
+          {/* Left: Sidebar toggle button (only visible when sidebar is closed) */}
           <div className="flex items-center min-w-[36px] sm:min-w-0">
-            <button
-              type="button"
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 sm:p-2.5 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors touch-manipulation"
-              title="Panelni ochish"
-              aria-label="Open sidebar"
-            >
-              <PanelLeftOpen className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-            </button>
+            {!isSidebarOpen && (
+              <button
+                type="button"
+                onClick={() => setIsSidebarOpen(true)}
+                className="p-2 sm:p-2.5 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors touch-manipulation"
+                title="Panelni ochish"
+                aria-label="Open sidebar"
+              >
+                <PanelLeftOpen className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
+              </button>
+            )}
           </div>
 
-          {/* Center: Model Selector (Centered, responsive and fully accessible) */}
+          {/* Center: Model Selector (Flexes on mobile, absolutely centered on desktop) */}
           <div className="flex items-center justify-center flex-1 sm:flex-initial sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-40 px-1">
             <ModelSelector
               models={settings.models || []}
@@ -177,24 +178,13 @@ export function App() {
             />
           </div>
 
-          {/* Right Header Actions */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Quick New Chat Button: Instant new chat from anywhere (especially mobile!) */}
-            <button
-              type="button"
-              onClick={handleNewChat}
-              className="p-2 sm:p-2.5 rounded-xl text-[#047857] hover:text-[#065F46] dark:text-[#34D399] dark:hover:text-[#6EE7B7] hover:bg-[#E6F4EA] dark:hover:bg-[#064E3B]/30 transition-colors touch-manipulation"
-              title={t('newChat')}
-              aria-label="New chat"
-            >
-              <SquarePen className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
-            </button>
-
-            {/* Quick Theme Switcher (Desktop only to keep mobile header clean) */}
+          {/* Right Header Actions: Compact on mobile */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Quick Theme Switcher */}
             <button
               type="button"
               onClick={handleCycleTheme}
-              className="hidden sm:flex w-10 h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] items-center justify-center transition-colors shadow-xs touch-manipulation"
+              className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs touch-manipulation"
               title={`${t('theme')}: ${
                 settings.theme === 'light'
                   ? t('themeLight')
@@ -206,11 +196,11 @@ export function App() {
               {getThemeIcon(settings.theme || 'system')}
             </button>
 
-            {/* Quick Language Switcher (Desktop only) */}
+            {/* Quick Language Switcher */}
             <button
               type="button"
               onClick={handleCycleLanguage}
-              className="hidden sm:flex w-14 h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] items-center justify-center transition-colors shadow-xs select-none touch-manipulation"
+              className="w-11 h-8.5 sm:w-14 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none touch-manipulation"
               title={`${t('language')}: ${settings.language || 'uz'}`}
             >
               <span>{getLanguageCode(settings.language || 'uz')}</span>
