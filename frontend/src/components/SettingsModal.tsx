@@ -377,15 +377,15 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/45 dark:bg-black/65 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/45 dark:bg-black/65 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={handleClose}
     >
       <div 
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full sm:w-[640px] max-w-2xl h-[min(580px,calc(100dvh-32px))] bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] rounded-2xl shadow-2xl overflow-hidden flex flex-col text-[#1F2937] dark:text-[#ECEBE8] animate-in zoom-in-95 duration-150"
+        className="relative w-full sm:w-[640px] max-w-2xl h-[min(620px,calc(100dvh-16px))] sm:h-[min(580px,calc(100dvh-32px))] bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] rounded-2xl shadow-2xl overflow-hidden flex flex-col text-[#1F2937] dark:text-[#ECEBE8] animate-in zoom-in-95 duration-150"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-3.5 border-b border-[#E5E7EB] dark:border-[#2D2D2A] bg-white dark:bg-[#1E1E1C] shrink-0">
+        <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-3.5 border-b border-[#E5E7EB] dark:border-[#2D2D2A] bg-white dark:bg-[#1E1E1C] shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-[#F3F4F6] dark:bg-[#262624] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center border border-[#E5E7EB] dark:border-[#333330]">
               <SettingsIcon className="w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF]" />
@@ -402,24 +402,24 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             className="p-1.5 rounded-lg text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#262624] transition-colors touch-manipulation"
             title={t('closeSidebar')}
           >
-            <X className="w-4.5 h-4.5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab Navigation Bar: Clean segmented pill control */}
-        <div className="px-3 sm:px-6 pt-2.5 pb-2 border-b border-[#E5E7EB] dark:border-[#2D2D2A] bg-[#FAFAF9] dark:bg-[#181816] shrink-0">
+        {/* Tab Navigation Bar: Horizontal scrollable chips on mobile, equal distribution on desktop */}
+        <div className="px-2.5 sm:px-6 pt-2 pb-2 border-b border-[#E5E7EB] dark:border-[#2D2D2A] bg-[#FAFAF9] dark:bg-[#181816] shrink-0">
           <div className="flex p-1 bg-[#EEEEEA] dark:bg-[#252522] rounded-xl gap-1 overflow-x-auto no-scrollbar scroll-smooth">
             {/* 1. Account Tab */}
             <button
               type="button"
               onClick={() => setActiveTab('account')}
-              className={`flex-1 min-w-[70px] sm:min-w-0 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs sm:text-sm transition-all select-none touch-manipulation ${
+              className={`shrink-0 sm:flex-1 sm:min-w-0 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 sm:px-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-all select-none touch-manipulation ${
                 activeTab === 'account'
                   ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
               }`}
             >
-              <UserIcon className="w-3.5 h-3.5 shrink-0" />
+              <UserIcon className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span>{t('tabAccount')}</span>
               {isAuthenticated && (
                 <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399]" />
@@ -430,13 +430,13 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('models')}
-              className={`flex-1 min-w-[70px] sm:min-w-0 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs sm:text-sm transition-all select-none touch-manipulation ${
+              className={`shrink-0 sm:flex-1 sm:min-w-0 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 sm:px-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-all select-none touch-manipulation ${
                 activeTab === 'models'
                   ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
               }`}
             >
-              <Cpu className="w-3.5 h-3.5 shrink-0" />
+              <Cpu className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span>{t('tabModels')}</span>
             </button>
 
@@ -444,13 +444,13 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('params')}
-              className={`flex-1 min-w-[78px] sm:min-w-0 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs sm:text-sm transition-all select-none touch-manipulation ${
+              className={`shrink-0 sm:flex-1 sm:min-w-0 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 sm:px-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-all select-none touch-manipulation ${
                 activeTab === 'params'
                   ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
               }`}
             >
-              <Sliders className="w-3.5 h-3.5 shrink-0" />
+              <Sliders className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span>{t('tabParams')}</span>
             </button>
 
@@ -458,13 +458,13 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('general')}
-              className={`flex-1 min-w-[65px] sm:min-w-0 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs sm:text-sm transition-all select-none touch-manipulation ${
+              className={`shrink-0 sm:flex-1 sm:min-w-0 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 sm:px-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-all select-none touch-manipulation ${
                 activeTab === 'general'
                   ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
               }`}
             >
-              <Layers className="w-3.5 h-3.5 shrink-0" />
+              <Layers className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span>{t('tabGeneral')}</span>
             </button>
 
@@ -472,20 +472,20 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             <button
               type="button"
               onClick={() => setActiveTab('data')}
-              className={`flex-1 min-w-[60px] sm:min-w-0 flex items-center justify-center gap-1.5 py-1.5 px-2.5 rounded-lg text-xs sm:text-sm transition-all select-none touch-manipulation ${
+              className={`shrink-0 sm:flex-1 sm:min-w-0 flex items-center justify-center gap-1.5 py-2 sm:py-1.5 px-3 sm:px-2.5 rounded-lg text-xs sm:text-sm whitespace-nowrap transition-all select-none touch-manipulation ${
                 activeTab === 'data'
                   ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
                   : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
               }`}
             >
-              <Database className="w-3.5 h-3.5 shrink-0" />
+              <Database className="w-4 h-4 sm:w-3.5 sm:h-3.5 shrink-0" />
               <span>{t('tabData')}</span>
             </button>
           </div>
         </div>
 
-        {/* Tab Body: Smooth internal scroll */}
-        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-5 text-sm">
+        {/* Tab Body: Smooth internal scroll with comfortable mobile padding */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3.5 sm:p-5 space-y-4 sm:space-y-5 text-sm">
           {/* TAB 1: ACCOUNT & AUTH */}
           {activeTab === 'account' && (
             <div className="space-y-5 animate-in fade-in duration-150">
@@ -607,14 +607,14 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                   {/* Feedback alerts */}
                   {authError && (
                     <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/50 text-[#DC2626] dark:text-[#F87171] text-xs sm:text-sm flex items-center gap-2 animate-in fade-in">
-                      <AlertCircle className="w-4.5 h-4.5 shrink-0" />
+                      <AlertCircle className="w-5 h-5 shrink-0" />
                       <span>{authError}</span>
                     </div>
                   )}
 
                   {authSuccessMsg && (
                     <div className="p-3 rounded-xl bg-[#E6F4EA] dark:bg-[#064E3B]/20 border border-[#86EFAC] dark:border-[#059669]/50 text-[#047857] dark:text-[#34D399] text-xs sm:text-sm flex items-center gap-2 animate-in fade-in">
-                      <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
+                      <CheckCircle2 className="w-5 h-5 shrink-0" />
                       <span>{authSuccessMsg}</span>
                     </div>
                   )}
@@ -653,7 +653,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                           onClick={() => setShowAuthPassword(!showAuthPassword)}
                           className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8]"
                         >
-                          {showAuthPassword ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                          {showAuthPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                         </button>
                       </div>
                     </div>
@@ -683,9 +683,9 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
             <div className="space-y-6 animate-in fade-in duration-150">
               {/* Section: Multiple Saved Models Manager */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-0">
                   <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF] flex items-center gap-2">
-                    <Cpu className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" /> {t('savedModels')} ({modelsList.length})
+                    <Cpu className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('savedModels')} ({modelsList.length})
                   </h3>
                   <button
                     type="button"
@@ -696,7 +696,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                       setNewModelApiKey('');
                       setShowAddForm(!showAddForm);
                     }}
-                    className="text-xs sm:text-sm text-[#047857] dark:text-[#34D399] hover:underline flex items-center gap-1.5 font-semibold"
+                    className="self-start sm:self-auto text-xs sm:text-sm text-[#047857] dark:text-[#34D399] hover:underline flex items-center gap-1.5 font-semibold"
                   >
                     <Plus className="w-4 h-4" />
                     <span>{t('addModelBtn')}</span>
@@ -838,7 +838,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
               {/* Endpoint & Auth Inputs */}
               <div className="space-y-4 pt-4 border-t border-[#E5E7EB] dark:border-[#333330]">
                 <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF] flex items-center gap-2">
-                  <Globe className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" /> {t('serverConnection')}
+                  <Globe className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('serverConnection')}
                 </h3>
 
                 <div>
@@ -874,17 +874,17 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                       onClick={() => setShowKey(!showKey)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8]"
                     >
-                      {showKey ? <EyeOff className="w-4.5 h-4.5" /> : <Eye className="w-4.5 h-4.5" />}
+                      {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-0 mb-1.5">
                     <label className="block text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center gap-1.5">
                       <Cpu className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('modelLabel')}
                     </label>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 self-end sm:self-auto flex-wrap">
                       {availableModels.length > 0 && (
                         <button
                           type="button"
@@ -949,21 +949,21 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                     {testStatus === 'loading' ? (
                       <RefreshCw className="w-4 h-4 animate-spin text-[#047857] dark:text-[#34D399]" />
                     ) : (
-                      <Sparkles className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" />
+                      <Sparkles className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
                     )}
                     {testStatus === 'loading' ? t('testingConnection') : t('testConnection')}
                   </button>
 
                   {testStatus === 'success' && (
                     <div className="mt-2.5 p-3 rounded-xl bg-[#E6F4EA] dark:bg-[#1E2822] border border-[#86EFAC] dark:border-[#2D4536] text-[#065F46] dark:text-[#78B48B] text-sm flex items-start gap-2">
-                      <CheckCircle2 className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399] shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-5 h-5 text-[#047857] dark:text-[#34D399] shrink-0 mt-0.5" />
                       <div>{testMessage}</div>
                     </div>
                   )}
 
                   {testStatus === 'error' && (
                     <div className="mt-2.5 p-3 rounded-xl bg-[#FEE2E2] dark:bg-[#2C1F1B] border border-[#FCA5A5] dark:border-[#5C2B1D] text-[#991B1B] dark:text-[#F87171] text-sm flex items-start gap-2">
-                      <AlertCircle className="w-4.5 h-4.5 text-[#DC2626] dark:text-[#F87171] shrink-0 mt-0.5" />
+                      <AlertCircle className="w-5 h-5 text-[#DC2626] dark:text-[#F87171] shrink-0 mt-0.5" />
                       <div>{testMessage}</div>
                     </div>
                   )}
@@ -976,7 +976,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
           {activeTab === 'params' && (
             <div className="space-y-5 animate-in fade-in duration-150">
               <h3 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF] flex items-center gap-2">
-                <Sliders className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" /> {t('modelParams')}
+                <Sliders className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('modelParams')}
               </h3>
 
               {/* Temperature & Top P */}
@@ -1016,11 +1016,11 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
 
               {/* Max Tokens */}
               <div>
-                <div className="flex items-center justify-between mb-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-0.5 sm:gap-0 mb-1.5">
                   <label className="block text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
                     {t('maxTokens')}
                   </label>
-                  <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF]">
+                  <span className="text-[11px] sm:text-xs text-[#6B7280] dark:text-[#9CA3AF]">
                     Standart: 4096 (Tavsiya: 2048 – 8192)
                   </span>
                 </div>
@@ -1088,7 +1088,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                 {/* Theme Selector */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] mb-2 flex items-center gap-1.5">
-                    <Sun className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" /> {t('theme')}
+                    <Sun className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('theme')}
                   </label>
                   <div className="grid grid-cols-3 gap-1 p-1 bg-[#EEEEEA] dark:bg-[#252522] rounded-xl border border-[#E5E7EB] dark:border-[#383835]">
                     <button
@@ -1133,7 +1133,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                 {/* Language Selector */}
                 <div>
                   <label className="block text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] mb-2 flex items-center gap-1.5">
-                    <Languages className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" /> {t('language')}
+                    <Languages className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('language')}
                   </label>
                   <div className="grid grid-cols-3 gap-1 p-1 bg-[#EEEEEA] dark:bg-[#252522] rounded-xl border border-[#E5E7EB] dark:border-[#383835]">
                     <button
@@ -1187,9 +1187,9 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                   }`}
                 >
                   {dataNotice.type === 'success' ? (
-                    <CheckCircle2 className="w-4.5 h-4.5 shrink-0" />
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
                   ) : (
-                    <AlertCircle className="w-4.5 h-4.5 shrink-0" />
+                    <AlertCircle className="w-5 h-5 shrink-0" />
                   )}
                   <span>{dataNotice.text}</span>
                 </div>
@@ -1197,9 +1197,9 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
 
               {/* Storage Usage Stat */}
               <div className="p-4 rounded-xl bg-[#F9FAFB] dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330]">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-0 mb-2">
                   <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
-                    <HardDrive className="w-4.5 h-4.5 text-[#047857] dark:text-[#34D399]" />
+                    <HardDrive className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
                     <span>{t('storageUsage')}</span>
                   </div>
                   <span className="font-mono text-xs font-semibold text-[#047857] dark:text-[#34D399]">
