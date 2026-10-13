@@ -8,7 +8,7 @@ interface ModelSelectorProps {
   activeModelId?: string;
   currentModelName: string;
   onSelectModel: (id: string) => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (tab?: string) => void;
   language: Language;
 }
 
@@ -71,25 +71,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex items-center gap-2.5 py-2 px-3.5 rounded-xl border text-sm transition-colors shadow-2xs select-none max-w-[220px] sm:max-w-[280px] ${
+        className={`flex items-center gap-1.5 sm:gap-2.5 py-1.5 px-2.5 sm:py-2 sm:px-3.5 rounded-xl border text-xs sm:text-sm transition-colors shadow-2xs select-none max-w-[135px] xs:max-w-[190px] sm:max-w-[280px] touch-manipulation ${
           isOpen
             ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/30 border-[#86EFAC] dark:border-[#059669]/60 text-[#1F2937] dark:text-[#ECEBE8]'
             : 'bg-white dark:bg-[#1E1E1C] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8]'
         }`}
         title={t('switchModel')}
       >
-        <Cpu className="w-4 h-4 text-[#047857] dark:text-[#34D399] shrink-0" />
+        <Cpu className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#047857] dark:text-[#34D399] shrink-0" />
         <span className="font-semibold truncate text-left">{displayName}</span>
         <ChevronDown
-          className={`w-4 h-4 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
+          className={`w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#6B7280] dark:text-[#9CA3AF] shrink-0 transition-transform duration-150 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
       </button>
 
-      {/* Dropdown Menu - explicitly floats on top of all chat elements */}
+      {/* Dropdown Menu - explicitly floats on top of all chat elements and fits mobile screen */}
       {isOpen && (
-        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-80 sm:w-88 rounded-2xl bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute left-1/2 -translate-x-1/2 mt-2 w-[calc(100vw-24px)] max-w-xs sm:max-w-sm sm:w-88 rounded-2xl bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] shadow-xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           {/* Sarlavha qismi: "SAQLANGAN MODELLAR" matni yuqoridagi neytral och fonda turadi */}
           <div className="px-4 py-3 border-b border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between bg-[#F3F4F6] dark:bg-[#252522]">
             <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280] dark:text-[#9CA3AF]">
@@ -151,7 +151,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               type="button"
               onClick={() => {
                 setIsOpen(false);
-                onOpenSettings();
+                onOpenSettings('models');
               }}
               className="w-full flex items-center justify-center gap-2 py-2.5 px-3.5 rounded-xl text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#262624] transition-colors"
             >

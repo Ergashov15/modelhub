@@ -143,22 +143,22 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
   return (
     <div className="w-full my-3.5 rounded-2xl bg-[#F9FAFB] dark:bg-[#181816] border border-[#E5E7EB] dark:border-[#2C2C29] overflow-hidden shadow-2xs font-sans text-sm">
       {/* Code Header Bar */}
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-[#E5E7EB] dark:border-[#2C2C29] bg-[#F3F4F6]/80 dark:bg-[#141412]/85 select-none">
+      <div className="flex items-center justify-between px-2.5 sm:px-4 py-2 sm:py-2.5 border-b border-[#E5E7EB] dark:border-[#2C2C29] bg-[#F3F4F6]/80 dark:bg-[#141412]/85 select-none gap-2">
         {/* Left: </> icon + Language Name */}
-        <div className="flex items-center gap-2">
-          <Code2 className="w-4.5 h-4.5 text-[#6B7280] dark:text-[#9CA3AF]" />
-          <span className="text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+          <Code2 className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-[#6B7280] dark:text-[#9CA3AF] shrink-0" />
+          <span className="text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] truncate">
             {langDisplayName}
           </span>
         </div>
 
         {/* Right: Action Buttons (Insert / Copy / Run) */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
           {/* 1. Insert into chat / editor button */}
           <button
             type="button"
             onClick={handleInsert}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors"
+            className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors touch-manipulation"
             title={t('insertCode')}
           >
             <ArrowDownToLine className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
@@ -169,13 +169,13 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors"
+            className="flex items-center gap-1.5 p-1.5 sm:px-2.5 sm:py-1.5 rounded-lg text-xs font-medium text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#E5E7EB] dark:hover:bg-[#252522] transition-colors touch-manipulation"
             title={t('copy')}
           >
             {copied ? (
               <>
                 <Check className="w-4 h-4 text-[#047857]" />
-                <span className="text-[#047857] font-semibold">{t('copied')}</span>
+                <span className="text-[#047857] font-semibold text-xs">{t('copied')}</span>
               </>
             ) : (
               <>
@@ -190,7 +190,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
             type="button"
             onClick={handleRun}
             disabled={isRunning}
-            className="group flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold bg-white dark:bg-[#222220] hover:bg-[#047857] hover:text-white border border-[#E5E7EB] dark:border-[#333330] hover:border-[#047857] text-[#1F2937] dark:text-[#ECEBE8] transition-colors shadow-2xs ml-1 disabled:opacity-50"
+            className="group flex items-center gap-1.5 px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl text-xs sm:text-[13px] font-semibold bg-white dark:bg-[#222220] hover:bg-[#047857] hover:text-white border border-[#E5E7EB] dark:border-[#333330] hover:border-[#047857] text-[#1F2937] dark:text-[#ECEBE8] transition-colors shadow-2xs ml-0.5 disabled:opacity-50 touch-manipulation"
             title={t('runCode')}
           >
             {isRunning ? (
@@ -204,7 +204,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({
       </div>
 
       {/* Code Body */}
-      <div className="w-full p-4 overflow-x-auto max-h-[520px] overflow-y-auto font-mono text-[13px] sm:text-sm leading-relaxed selection:bg-[#E6F4EA]">
+      <div className="w-full p-3 sm:p-4 overflow-x-auto max-h-[520px] overflow-y-auto font-mono text-xs sm:text-sm leading-relaxed selection:bg-[#E6F4EA]">
         <pre className="w-full m-0 p-0 bg-transparent">
           <code className="block w-full" dangerouslySetInnerHTML={{ __html: highlightedHtml }} />
         </pre>

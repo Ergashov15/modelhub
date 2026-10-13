@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import type { ChatMessage, Conversation, Settings, FileAttachment } from '../types';
 import { getTranslation } from '../i18n/translations';
+import { useAuth } from './useAuth';
 import {
   ACTIVE_CHAT_KEY,
   loadChatIndex,
@@ -12,27 +13,11 @@ import {
 } from '../utils/storage';
 
 export function useChat(settings: Settings) {
-  const [conversations, setConversations] = useState<Conversation[]>(() => {
-    const index = loadChatIndex();
-    if (index.length > 0) {
-      return index.map((meta) => ({
-        id: meta.id,
-        title: meta.title,
-        updatedAt: meta.updatedAt,
-        messages: loadChatMessages(meta.id),
-      }));
-    }
-    const defaultId = 'default-1';
-    const defaultConv: Conversation = {
-      id: defaultId,
-      title: '',
-      messages: [],
-      updatedAt: Date.now(),
-    };
-    saveChatIndex([{ id: defaultId, title: '', updatedAt: defaultConv.updatedAt }]);
-    saveChatMessages(defaultId, []);
-    return [defaultConv];
-  });
+  const { token } = useAuth();
+  const tokenRef = useRef<string | null>(token);
+  useEffect(() => {
+    tokenRef.current = token;
+  }, [token]);
 
   const [activeId, setActiveId] = useState<string>(() => {
     try {
@@ -50,35 +35,109 @@ export function useChat(settings: Settings) {
     return 'default-1';
   });
 
-  const [isStreaming, setIsStreaming] = useState(false);
-  const abortControllerRef = useRef<AbortController | null>(null);
+  // Lazy loading: Only load full messages for active chat on startup, keeping others lightweight in memory
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    const index = loadChatIndex();
+    const savedActive = typeof localStorage !== 'undefined' ? localStorage.getItem(ACTIVE_CHAT_KEY) : null;
+    const initialActive = (savedActive && index.some((m) => m.id === savedActive))
+      ? savedActive
+      : (index[0]?.id || 'default-1');
 
-  const lastSaveTimeRef = useRef<number>(0);
-  const saveTimeoutRef = useRef<number | null>(null);
-  const pendingSaveMsgsRef = useRef<{ chatId: string; messages: ChatMessage[] } | null>(null);
-
-  const persistChatMessages = useCallback((chatId: string, messages: ChatMessage[], immediate = false) => {
-    pendingSaveMsgsRef.current = { chatId, messages };
-    const now = Date.now();
-    if (immediate || now - lastSaveTimeRef.current >= 1000) {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current);
-        saveTimeoutRef.current = null;
-      }
-      saveChatMessages(chatId, messages);
-      lastSaveTimeRef.current = now;
-      pendingSaveMsgsRef.current = null;
-    } else if (!saveTimeoutRef.current) {
-      saveTimeoutRef.current = window.setTimeout(() => {
-        if (pendingSaveMsgsRef.current) {
-          saveChatMessages(pendingSaveMsgsRef.current.chatId, pendingSaveMsgsRef.current.messages);
-          pendingSaveMsgsRef.current = null;
-        }
-        lastSaveTimeRef.current = Date.now();
-        saveTimeoutRef.current = null;
-      }, 1000);
+    if (index.length > 0) {
+      return index.map((meta) => ({
+        id: meta.id,
+        title: meta.title,
+        updatedAt: meta.updatedAt,
+        messages: meta.id === initialActive ? loadChatMessages(meta.id) : [],
+      }));
     }
-  }, []);
+    const defaultId = 'default-1';
+    const defaultConv: Conversation = {
+      id: defaultId,
+      title: '',
+      messages: [],
+      updatedAt: Date.now(),
+    };
+    saveChatIndex([{ id: defaultId, title: '', updatedAt: defaultConv.updatedAt }]);
+    saveChatMessages(defaultId, []);
+    return [defaultConv];
+  });
+
+  const conversationsRef = useRef<Conversation[]>(conversations);
+  useEffect(() => {
+    conversationsRef.current = conversations;
+  }, [conversations]);
+
+  // Track streaming state per conversation ID so multiple chats can stream independently
+  const [streamingChatIds, setStreamingChatIds] = useState<Record<string, boolean>>({});
+  const abortControllersRef = useRef<Map<string, AbortController>>(new Map());
+
+  // Individual persistence queues per conversation to avoid cross-chat race conditions
+  const pendingSavesRef = useRef<Map<string, ChatMessage[]>>(new Map());
+  const saveTimeoutsRef = useRef<Map<string, number>>(new Map());
+
+  // Cloud sync helper: upload conversation to server database
+  const syncConversationToServer = useCallback(
+    async (chatId: string, messages: ChatMessage[], title?: string) => {
+      const currentToken = tokenRef.current;
+      if (!currentToken) return;
+      try {
+        const conv = conversationsRef.current.find((c) => c.id === chatId);
+        const convTitle = title !== undefined ? title : (conv?.title || '');
+        await fetch('/api/user/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentToken}`,
+          },
+          body: JSON.stringify({
+            conversations: [
+              {
+                id: chatId,
+                title: convTitle,
+                messages,
+                updatedAt: Date.now(),
+              },
+            ],
+          }),
+        });
+      } catch (err) {
+        console.warn('Server sync error:', err);
+      }
+    },
+    []
+  );
+
+  const persistChatMessages = useCallback(
+    (chatId: string, messages: ChatMessage[], immediate = false) => {
+      if (immediate) {
+        const existingTimeout = saveTimeoutsRef.current.get(chatId);
+        if (existingTimeout) {
+          clearTimeout(existingTimeout);
+          saveTimeoutsRef.current.delete(chatId);
+        }
+        pendingSavesRef.current.delete(chatId);
+        saveChatMessages(chatId, messages);
+        syncConversationToServer(chatId, messages);
+        return;
+      }
+
+      pendingSavesRef.current.set(chatId, messages);
+      if (!saveTimeoutsRef.current.has(chatId)) {
+        const timeoutId = window.setTimeout(() => {
+          const pending = pendingSavesRef.current.get(chatId);
+          if (pending) {
+            saveChatMessages(chatId, pending);
+            syncConversationToServer(chatId, pending);
+            pendingSavesRef.current.delete(chatId);
+          }
+          saveTimeoutsRef.current.delete(chatId);
+        }, 800);
+        saveTimeoutsRef.current.set(chatId, timeoutId);
+      }
+    },
+    [syncConversationToServer]
+  );
 
   useEffect(() => {
     const indexMeta: ChatMeta[] = conversations.map((c) => ({
@@ -97,27 +156,51 @@ export function useChat(settings: Settings) {
     }
   }, [activeId]);
 
-  const activeConversation = conversations.find((c) => c.id === activeId) || conversations[0];
+  // Switch active chat and lazy-load its messages on demand
+  const switchChat = useCallback((id: string) => {
+    setActiveId(id);
+    setConversations((prev) => {
+      const target = prev.find((c) => c.id === id);
+      if (target && (!target.messages || target.messages.length === 0)) {
+        const loaded = loadChatMessages(id);
+        if (loaded.length > 0) {
+          return prev.map((c) => (c.id === id ? { ...c, messages: loaded } : c));
+        }
+      }
+      return prev;
+    });
+  }, []);
+
+  const activeConversation = useMemo(() => {
+    const conv = conversations.find((c) => c.id === activeId) || conversations[0];
+    if (conv && (!conv.messages || conv.messages.length === 0)) {
+      const loaded = loadChatMessages(conv.id);
+      if (loaded.length > 0) {
+        return { ...conv, messages: loaded };
+      }
+    }
+    return conv;
+  }, [conversations, activeId]);
 
   // Guarantee persistence before page unloads / refreshes
   useEffect(() => {
     const handleBeforeUnload = () => {
-      if (pendingSaveMsgsRef.current) {
-        saveChatMessages(pendingSaveMsgsRef.current.chatId, pendingSaveMsgsRef.current.messages);
-      }
-      const current = conversations.find((c) => c.id === activeId);
-      if (current && current.messages.length > 0) {
-        saveChatMessages(activeId, current.messages);
-      }
+      pendingSavesRef.current.forEach((msgs, chatId) => {
+        saveChatMessages(chatId, msgs);
+      });
+      pendingSavesRef.current.clear();
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [activeId, conversations]);
+  }, []);
 
   const createNewChat = () => {
-    const emptyExisting = conversations.find((c) => c.messages.length === 0);
+    // If there is an existing empty conversation that is NOT generating, switch to it
+    const emptyExisting = conversations.find(
+      (c) => (!c.messages || c.messages.length === 0) && !streamingChatIds[c.id]
+    );
     if (emptyExisting) {
-      setActiveId(emptyExisting.id);
+      switchChat(emptyExisting.id);
       return;
     }
 
@@ -129,11 +212,88 @@ export function useChat(settings: Settings) {
     };
     saveChatMessages(newConv.id, []);
     setConversations((prev) => [newConv, ...prev]);
-    setActiveId(newConv.id);
+    switchChat(newConv.id);
   };
 
+  const prevTokenRef = useRef<string | null>(token);
+  useEffect(() => {
+    if (token) {
+      fetch('/api/user/conversations', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((data: { conversations?: Conversation[] }) => {
+          if (data && data.conversations && data.conversations.length > 0) {
+            data.conversations.forEach((c) => {
+              saveChatMessages(c.id, c.messages || []);
+            });
+            setConversations(data.conversations);
+            setActiveId((prevId) =>
+              data.conversations!.some((c) => c.id === prevId) ? prevId : data.conversations![0].id
+            );
+          } else {
+            // First time login or empty server database:
+            // Sync existing local conversations with messages to server
+            const localIndex = loadChatIndex();
+            const localToSync = localIndex
+              .map((m) => ({
+                id: m.id,
+                title: m.title,
+                updatedAt: m.updatedAt,
+                messages: loadChatMessages(m.id),
+              }))
+              .filter((c) => c.messages && c.messages.length > 0);
+
+            if (localToSync.length > 0) {
+              fetch('/api/user/conversations', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+                },
+                body: JSON.stringify({ conversations: localToSync }),
+              }).catch((err) => console.warn('Initial sync error:', err));
+            }
+          }
+        })
+        .catch((err) => console.warn('Failed to load server conversations:', err));
+    } else if (prevTokenRef.current && !token) {
+      // User logged out: switch to a clean guest state
+      const freshId = 'conv-' + Date.now();
+      const freshConv: Conversation = {
+        id: freshId,
+        title: '',
+        messages: [],
+        updatedAt: Date.now(),
+      };
+      saveChatIndex([{ id: freshId, title: '', updatedAt: freshConv.updatedAt }]);
+      saveChatMessages(freshId, []);
+      setConversations([freshConv]);
+      setActiveId(freshId);
+    }
+    prevTokenRef.current = token;
+  }, [token]);
+
   const deleteChat = (id: string) => {
+    // Abort if currently streaming
+    const controller = abortControllersRef.current.get(id);
+    if (controller) {
+      controller.abort();
+      abortControllersRef.current.delete(id);
+    }
+    setStreamingChatIds((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+
     deleteChatStorage(id);
+    if (tokenRef.current) {
+      fetch(`/api/user/conversations/${id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${tokenRef.current}` },
+      }).catch((err) => console.warn('Delete on server error:', err));
+    }
     setConversations((prev) => {
       const filtered = prev.filter((c) => c.id !== id);
       if (filtered.length === 0) {
@@ -154,20 +314,46 @@ export function useChat(settings: Settings) {
     });
   };
 
-  const stopGeneration = () => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      abortControllerRef.current = null;
+  const stopGeneration = (chatId?: string) => {
+    const targetId = chatId || activeId;
+    const controller = abortControllersRef.current.get(targetId);
+    if (controller) {
+      controller.abort();
+      abortControllersRef.current.delete(targetId);
     }
-    if (activeConversation) {
-      saveChatMessages(activeId, activeConversation.messages);
-    }
-    setIsStreaming(false);
+    setStreamingChatIds((prev) => {
+      const next = { ...prev };
+      delete next[targetId];
+      return next;
+    });
+    setConversations((prev) =>
+      prev.map((c) => {
+        if (c.id === targetId) {
+          const msgs = c.messages.map((m) =>
+            m.isStreaming ? { ...m, isStreaming: false } : m
+          );
+          saveChatMessages(targetId, msgs);
+          return { ...c, messages: msgs };
+        }
+        return c;
+      })
+    );
   };
 
   const sendMessage = async (content: string, attachments?: FileAttachment[], webSearch?: boolean) => {
     const trimmed = content.trim();
-    if ((!trimmed && (!attachments || attachments.length === 0)) || isStreaming) return;
+    // Explicitly lock the target conversation ID at the moment of sending
+    const targetChatId = activeId;
+
+    // Disallow sending if empty or if THIS specific chat is already generating
+    if ((!trimmed && (!attachments || attachments.length === 0)) || streamingChatIds[targetChatId]) {
+      return;
+    }
+
+    const targetConv = conversations.find((c) => c.id === targetChatId);
+    const baseHistory = targetConv?.messages && targetConv.messages.length > 0
+      ? [...targetConv.messages]
+      : loadChatMessages(targetChatId);
 
     const userMessage: ChatMessage = {
       id: 'msg-' + Date.now(),
@@ -186,17 +372,16 @@ export function useChat(settings: Settings) {
       isStreaming: true,
     };
 
-    const baseHistory = activeConversation ? [...activeConversation.messages] : [];
     const initialMsgs: ChatMessage[] = [...baseHistory, userMessage, assistantMessage];
     const displayTitle = trimmed || (attachments && attachments[0]?.name) || 'File';
     const isFirstMessage = baseHistory.length === 0;
     const newTitle = isFirstMessage
       ? displayTitle.slice(0, 30) + (displayTitle.length > 30 ? '...' : '')
-      : (activeConversation?.title || '');
+      : (targetConv?.title || '');
 
     setConversations((prev) =>
       prev.map((c) => {
-        if (c.id === activeId) {
+        if (c.id === targetChatId) {
           return {
             ...c,
             title: newTitle,
@@ -208,19 +393,22 @@ export function useChat(settings: Settings) {
       })
     );
 
-    saveChatMessages(activeId, initialMsgs);
+    saveChatMessages(targetChatId, initialMsgs);
+    syncConversationToServer(targetChatId, initialMsgs, newTitle);
     if (isFirstMessage) {
       const currentIndex = loadChatIndex();
-      const updatedIndex = currentIndex.some((item) => item.id === activeId)
+      const updatedIndex = currentIndex.some((item) => item.id === targetChatId)
         ? currentIndex.map((item) =>
-            item.id === activeId ? { ...item, title: newTitle, updatedAt: Date.now() } : item
+            item.id === targetChatId ? { ...item, title: newTitle, updatedAt: Date.now() } : item
           )
-        : [{ id: activeId, title: newTitle, updatedAt: Date.now() }, ...currentIndex];
+        : [{ id: targetChatId, title: newTitle, updatedAt: Date.now() }, ...currentIndex];
       saveChatIndex(updatedIndex);
     }
 
-    setIsStreaming(true);
-    abortControllerRef.current = new AbortController();
+    // Set streaming state and controller for targetChatId
+    const controller = new AbortController();
+    abortControllersRef.current.set(targetChatId, controller);
+    setStreamingChatIds((prev) => ({ ...prev, [targetChatId]: true }));
 
     const currentMessages = [...baseHistory, userMessage];
     const apiMessages: Array<{ role: string; content: string | any[] }> = [];
@@ -230,7 +418,7 @@ export function useChat(settings: Settings) {
     }
 
     currentMessages.forEach((m) => {
-      // Skip errored or empty messages from LLM context
+      // Skip errored messages from LLM context
       if (m.error) return;
 
       // Clean internal thinking tags from previous assistant turns so context stays continuous
@@ -241,21 +429,73 @@ export function useChat(settings: Settings) {
 
       if (m.attachments && m.attachments.length > 0) {
         let msgText = cleanContent;
-        const textFiles = m.attachments.filter((a) => !a.isImage && a.content);
+        const textFiles = m.attachments.filter((a) => !a.isImage && !a.isVideo && a.content);
         if (textFiles.length > 0) {
           const context = textFiles.map((f) => `[File: ${f.name}]\n\`\`\`\n${f.content}\n\`\`\``).join('\n\n');
           msgText = context + (msgText ? `\n\n${msgText}` : '');
         }
 
         const imageFiles = m.attachments.filter((a) => a.isImage && a.previewUrl);
-        if (imageFiles.length > 0) {
-          const contentParts: any[] = [{ type: 'text', text: msgText || 'Analyze the attached image.' }];
-          imageFiles.forEach((img) => {
+        const videoFiles = m.attachments.filter((a) => a.isVideo);
+        const hasVisualMedia = imageFiles.length > 0 || videoFiles.length > 0;
+
+        if (hasVisualMedia) {
+          const contentParts: any[] = [];
+
+          let mediaHeader = '';
+          if (videoFiles.length > 0) {
+            mediaHeader += videoFiles.map((v) =>
+              `[Biriktirilgan video: "${v.name}" (davomiyligi: ~${Math.round(v.videoDuration || 0)} soniya). Quyida ushbu videodan vaqt ketma-ketligida olingan ${v.videoFrames?.length || 0} ta kadr/frame taqdim etilmoqda]`
+            ).join('\n') + '\n\n';
+          }
+          if (imageFiles.length > 0) {
+            mediaHeader += `[Yuklangan rasmlar soni: ${imageFiles.length} ta]\n\n`;
+          }
+
+          const defaultPrompt = settings.language === 'uz'
+            ? 'Iltimos, yuklangan barcha rasm va video kadrlarini diqqat bilan tahlil qiling va unda nimalar aks etganini, muhim jihatlarini batafsil tushuntirib bering.'
+            : settings.language === 'ru'
+            ? 'Пожалуйста, внимательно проанализируйте все прикрепленные изображения и видеокадры и подробно опишите, что на них происходит.'
+            : 'Please carefully analyze all attached images and video frames and provide a detailed explanation of what is shown.';
+
+          const fullText = (mediaHeader + (msgText || defaultPrompt)).trim();
+          contentParts.push({ type: 'text', text: fullText });
+
+          // Add image attachments (supporting up to 15 images)
+          imageFiles.forEach((img, idx) => {
+            if (imageFiles.length > 1) {
+              contentParts.push({
+                type: 'text',
+                text: `[Rasm #${idx + 1}: ${img.name}]`,
+              });
+            }
             contentParts.push({
               type: 'image_url',
-              image_url: { url: img.previewUrl }
+              image_url: { url: img.previewUrl },
             });
           });
+
+          // Add video frames
+          videoFiles.forEach((vid) => {
+            if (vid.videoFrames && vid.videoFrames.length > 0) {
+              vid.videoFrames.forEach((frame, fIdx) => {
+                contentParts.push({
+                  type: 'text',
+                  text: `[Video: "${vid.name}" | Kadr #${fIdx + 1} (${frame.time})]:`,
+                });
+                contentParts.push({
+                  type: 'image_url',
+                  image_url: { url: frame.dataUrl },
+                });
+              });
+            } else if (vid.previewUrl) {
+              contentParts.push({
+                type: 'image_url',
+                image_url: { url: vid.previewUrl },
+              });
+            }
+          });
+
           apiMessages.push({ role: m.role, content: contentParts });
         } else {
           if (msgText.trim()) {
@@ -275,7 +515,7 @@ export function useChat(settings: Settings) {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        signal: abortControllerRef.current.signal,
+        signal: controller.signal,
         body: JSON.stringify({
           endpoint: settings.endpoint,
           api_key: settings.apiKey || undefined,
@@ -315,21 +555,19 @@ export function useChat(settings: Settings) {
 
         sseBuffer += decoder.decode(value, { stream: true });
         const lines = sseBuffer.split('\n');
-        // Keep the last element in buffer (which may be an incomplete line)
         sseBuffer = lines.pop() || '';
 
         for (const line of lines) {
-          const trimmed = line.trim();
-          if (!trimmed || !trimmed.startsWith('data:')) continue;
+          const trimmedLine = line.trim();
+          if (!trimmedLine || !trimmedLine.startsWith('data:')) continue;
 
-          const dataStr = trimmed.replace(/^data:\s*/, '');
+          const dataStr = trimmedLine.replace(/^data:\s*/, '');
           if (dataStr === '[DONE]') break;
 
           let parsed: any;
           try {
             parsed = JSON.parse(dataStr);
           } catch {
-            // Incomplete or non-JSON line, continue
             continue;
           }
 
@@ -349,18 +587,12 @@ export function useChat(settings: Settings) {
               { ...assistantMessage, content: accumulatedContent, sources: parsed.sources, isStreaming: true },
             ];
             setConversations((prev) =>
-              prev.map((c) => (c.id === activeId ? { ...c, messages: currentMsgs } : c))
+              prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
             );
-            persistChatMessages(activeId, currentMsgs, false);
+            persistChatMessages(targetChatId, currentMsgs, false);
             continue;
           }
 
-          // Extract delta from multiple possible server formats:
-          // 1. Standard OpenAI / vLLM: delta.content
-          // 2. Ollama & DeepSeek-R1 reasoning: delta.reasoning or delta.reasoning_content
-          // 3. Ollama native API: message.thinking or message.content or response
-          // 4. Non-streaming OpenAI fallback: choices[0].message.content
-          // 5. llama.cpp / text completions: choices[0].text
           const deltaObj = parsed.choices?.[0]?.delta;
           const reasoningDelta = 
             deltaObj?.reasoning ?? 
@@ -378,7 +610,7 @@ export function useChat(settings: Settings) {
 
           let chunkToAppend = '';
 
-          // If model sends reasoning tokens (Ollama, DeepSeek-R1, Qwen reasoning)
+          // Thinking / Reasoning tokens
           if (reasoningDelta) {
             if (!isInsideThinkingBlock) {
               if (!accumulatedContent.includes('<think>')) {
@@ -389,7 +621,7 @@ export function useChat(settings: Settings) {
             chunkToAppend += reasoningDelta;
           }
 
-          // If model sends actual content tokens
+          // Main content tokens
           if (contentDelta) {
             if (isInsideThinkingBlock) {
               if (!accumulatedContent.includes('</think>')) {
@@ -408,14 +640,14 @@ export function useChat(settings: Settings) {
               { ...assistantMessage, content: accumulatedContent, isStreaming: true },
             ];
             setConversations((prev) =>
-              prev.map((c) => (c.id === activeId ? { ...c, messages: currentMsgs } : c))
+              prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
             );
-            persistChatMessages(activeId, currentMsgs, false);
+            persistChatMessages(targetChatId, currentMsgs, false);
           }
         }
       }
 
-      // Flush remaining sseBuffer line if present
+      // Flush remaining line if present
       if (sseBuffer.trim() && sseBuffer.trim().startsWith('data:')) {
         const dataStr = sseBuffer.trim().replace(/^data:\s*/, '');
         if (dataStr !== '[DONE]') {
@@ -439,9 +671,9 @@ export function useChat(settings: Settings) {
         { ...assistantMessage, content: accumulatedContent, isStreaming: false },
       ];
       setConversations((prev) =>
-        prev.map((c) => (c.id === activeId ? { ...c, messages: completedMsgs } : c))
+        prev.map((c) => (c.id === targetChatId ? { ...c, messages: completedMsgs } : c))
       );
-      persistChatMessages(activeId, completedMsgs, true);
+      persistChatMessages(targetChatId, completedMsgs, true);
     } catch (err: any) {
       if (err.name === 'AbortError') {
         const abortedMsgs: ChatMessage[] = [
@@ -450,9 +682,9 @@ export function useChat(settings: Settings) {
           { ...assistantMessage, content: accumulatedContent, isStreaming: false },
         ];
         setConversations((prev) =>
-          prev.map((c) => (c.id === activeId ? { ...c, messages: abortedMsgs } : c))
+          prev.map((c) => (c.id === targetChatId ? { ...c, messages: abortedMsgs } : c))
         );
-        persistChatMessages(activeId, abortedMsgs, true);
+        persistChatMessages(targetChatId, abortedMsgs, true);
       } else {
         const errMsg = err.message || getTranslation(settings.language, 'connectionLost');
         const errorMsgs: ChatMessage[] = [
@@ -466,25 +698,33 @@ export function useChat(settings: Settings) {
           },
         ];
         setConversations((prev) =>
-          prev.map((c) => (c.id === activeId ? { ...c, messages: errorMsgs } : c))
+          prev.map((c) => (c.id === targetChatId ? { ...c, messages: errorMsgs } : c))
         );
-        persistChatMessages(activeId, errorMsgs, true);
+        persistChatMessages(targetChatId, errorMsgs, true);
       }
     } finally {
-      setIsStreaming(false);
-      abortControllerRef.current = null;
+      setStreamingChatIds((prev) => {
+        const next = { ...prev };
+        delete next[targetChatId];
+        return next;
+      });
+      abortControllersRef.current.delete(targetChatId);
     }
   };
+
+  // Only the active conversation's streaming state is exposed as isStreaming for UI controls
+  const isStreamingActiveChat = Boolean(streamingChatIds[activeId]);
 
   return {
     conversations,
     activeConversation,
     activeId,
-    setActiveId,
+    setActiveId: switchChat,
     createNewChat,
     deleteChat,
     sendMessage,
     stopGeneration,
-    isStreaming,
+    isStreaming: isStreamingActiveChat,
+    streamingChatIds,
   };
 }

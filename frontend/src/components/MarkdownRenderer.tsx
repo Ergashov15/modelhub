@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from './CodeBlock';
-import type { Language } from '../types';
+import type { Language, WebSource } from '../types';
 
 interface MarkdownRendererProps {
   content: string;
   onInsertCode?: (code: string) => void;
   uiLanguage?: Language;
   isStreaming?: boolean;
+  sources?: WebSource[];
 }
 
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
@@ -16,7 +17,22 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   onInsertCode,
   uiLanguage = 'uz',
   isStreaming = false,
+  sources,
 }) => {
+  // Convert [1], [2] citations into markdown links if sources are provided
+  const processedContent = useMemo(() => {
+    if (!sources || sources.length === 0 || !content) return content;
+
+    // Convert [1], [2] etc. to [[1]](sourceUrl) when not already linked
+    return content.replace(/\[(\d+)\](?!\()/g, (match, numStr) => {
+      const idx = parseInt(numStr, 10) - 1;
+      if (idx >= 0 && idx < sources.length && sources[idx]?.url) {
+        return `[[${numStr}]](${sources[idx].url})`;
+      }
+      return match;
+    });
+  }, [content, sources]);
+
   return (
     <div className="prose prose-base dark:prose-invert max-w-none w-full font-sans text-sm sm:text-base leading-relaxed text-[#1F1E1D] dark:text-[#ECEBE8] break-words">
       <ReactMarkdown
@@ -45,7 +61,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
               );
             }
 
-            // Inline code pill: bg-neutral-100 px-2 py-0.5 rounded
+            // Inline code pill
             return (
               <code
                 className="bg-neutral-100 dark:bg-[#2A2A27] text-[#1F1E1D] dark:text-[#ECEBE8] border border-neutral-200 dark:border-[#383835] px-2 py-0.5 rounded-md font-mono text-[13px] sm:text-sm font-medium"
@@ -122,20 +138,40 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             </td>
           ),
 
-          // Links
-          a: ({ href, children }) => (
-            <a
-              href={href}
-              target="_blank"
-              rel="noreferrer"
-              className="text-[#047857] hover:underline underline-offset-2 font-medium"
-            >
-              {children}
-            </a>
-          ),
+          // Links & Web Search Citations
+          a: ({ href, children }) => {
+            const strChildren = String(children);
+            const isCitation = /^\[?\d+\]?$/.test(strChildren.trim());
+
+            if (isCitation) {
+              const cleanNum = strChildren.replace(/[[\]]/g, '');
+              return (
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1.5 mx-0.5 rounded-full bg-[#E6F4EA] dark:bg-[#064E3B]/60 text-[#047857] dark:text-[#34D399] hover:bg-[#047857] hover:text-white dark:hover:bg-[#34D399] dark:hover:text-[#181816] text-[10px] font-mono font-bold transition-all no-underline shadow-2xs align-baseline"
+                  title={href}
+                >
+                  {cleanNum}
+                </a>
+              );
+            }
+
+            return (
+              <a
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                className="text-[#047857] hover:underline underline-offset-2 font-medium"
+              >
+                {children}
+              </a>
+            );
+          },
         }}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
       {isStreaming && (
         <span className="inline-block w-2 h-4.5 ml-1 bg-[#047857] animate-pulse align-middle" />

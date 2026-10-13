@@ -29,3 +29,26 @@ class TestConnectionResponse(BaseModel):
 class ModelsRequest(BaseModel):
     endpoint: str
     api_key: Optional[str] = None
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+    email: Optional[str] = None
+    display_name: Optional[str] = None
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class AuthUser(BaseModel):
+    id: int
+    username: str
+    email: Optional[str] = None
+    display_name: Optional[str] = None
+    created_at: Optional[str] = None
+
+class AuthResponse(BaseModel):
+    success: bool
+    token: Optional[str] = None
+    user: Optional[AuthUser] = None
+    message: Optional[str] = None

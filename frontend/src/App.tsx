@@ -11,7 +11,7 @@ import { useTheme } from './hooks/useTheme';
 import { Sidebar } from './components/Sidebar';
 import { ChatView } from './components/ChatView';
 import { ChatInput } from './components/ChatInput';
-import { SettingsModal } from './components/SettingsModal';
+import { SettingsModal, type SettingsTab } from './components/SettingsModal';
 import { ModelSelector } from './components/ModelSelector';
 import { ModelHubLogo } from './components/ModelHubLogo';
 import { getTranslation, type TranslationKey } from './i18n/translations';
@@ -31,9 +31,16 @@ export function App() {
     sendMessage,
     stopGeneration,
     isStreaming,
+    streamingChatIds,
   } = useChat(settings);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<SettingsTab>('general');
+
+  const handleOpenSettings = (tab: SettingsTab = 'general') => {
+    setSettingsTab(tab);
+    setIsSettingsOpen(true);
+  };
   const [isWebSearchActive, setIsWebSearchActive] = useState<boolean>(() => {
     try {
       return localStorage.getItem('modelhub_web_search') === 'true';
@@ -112,7 +119,7 @@ export function App() {
   const [insertedCode, setInsertedCode] = useState<string>('');
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-white dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased">
+    <div className="flex h-screen h-[100dvh] w-full overflow-hidden bg-white dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased">
       {/* Sidebar */}
       <Sidebar
         conversations={conversations}
@@ -125,57 +132,59 @@ export function App() {
         }}
         onNewChat={handleNewChat}
         onDeleteChat={deleteChat}
-        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenSettings={handleOpenSettings}
         settings={settings}
         isOpen={isSidebarOpen}
         onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
+        streamingChatIds={streamingChatIds}
       />
 
       {/* Mobile backdrop overlay */}
       {isSidebarOpen && (
         <div
           onClick={() => setIsSidebarOpen(false)}
-          className="fixed inset-0 bg-black/25 dark:bg-black/50 z-30 md:hidden backdrop-blur-2xs transition-opacity"
+          className="fixed inset-0 bg-black/30 dark:bg-black/60 z-30 md:hidden backdrop-blur-2xs transition-opacity"
         />
       )}
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative bg-white dark:bg-[#181816]">
-        {/* Top Navbar: z-30 ensures dropdown and controls float on top of chat content */}
-        <header className="relative z-30 h-15 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-4 sm:px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center">
+        {/* Top Navbar: Responsive flex on mobile to prevent overlapping */}
+        <header className="relative z-30 h-14 sm:h-16 border-b border-[#E5E7EB] dark:border-[#333330] bg-white/95 dark:bg-[#181816]/90 backdrop-blur-md px-3 sm:px-6 flex items-center justify-between gap-2 shrink-0 pt-safe">
+          {/* Left: Sidebar toggle button */}
+          <div className="flex items-center min-w-[36px] sm:min-w-0">
             {!isSidebarOpen && (
               <button
                 type="button"
                 onClick={() => setIsSidebarOpen(true)}
-                className="p-2 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors"
+                className="p-2 sm:p-2.5 rounded-xl text-[#6B7280] hover:text-[#1F2937] dark:text-[#9CA3AF] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] shrink-0 transition-colors touch-manipulation"
                 title="Panelni ochish"
                 aria-label="Open sidebar"
               >
-                <PanelLeftOpen className="w-5.5 h-5.5" />
+                <PanelLeftOpen className="w-5 h-5 sm:w-5.5 sm:h-5.5" />
               </button>
             )}
           </div>
 
-          {/* Centered Model Selector: z-40 floats above everything in header */}
-          <div className="absolute left-1/2 -translate-x-1/2 z-40">
+          {/* Center: Model Selector (Flexes on mobile, absolutely centered on desktop) */}
+          <div className="flex items-center justify-center flex-1 sm:flex-initial sm:absolute sm:left-1/2 sm:-translate-x-1/2 z-40 px-1">
             <ModelSelector
               models={settings.models || []}
               activeModelId={settings.activeModelId}
               currentModelName={settings.model}
               onSelectModel={switchModel}
-              onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenSettings={(tab) => handleOpenSettings((tab as SettingsTab) || 'models')}
               language={settings.language}
             />
           </div>
 
-          {/* Right Header Actions: Stable, fixed-dimension buttons */}
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Right Header Actions: Compact on mobile */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {/* Quick Theme Switcher */}
             <button
               type="button"
               onClick={handleCycleTheme}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs"
+              className="w-8.5 h-8.5 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs touch-manipulation"
               title={`${t('theme')}: ${
                 settings.theme === 'light'
                   ? t('themeLight')
@@ -191,7 +200,7 @@ export function App() {
             <button
               type="button"
               onClick={handleCycleLanguage}
-              className="w-13 h-9 sm:w-14 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none"
+              className="w-11 h-8.5 sm:w-14 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-xs sm:text-sm font-mono font-semibold text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-xs select-none touch-manipulation"
               title={`${t('language')}: ${settings.language || 'uz'}`}
             >
               <span>{getLanguageCode(settings.language || 'uz')}</span>
@@ -212,7 +221,7 @@ export function App() {
               onStop={stopGeneration}
               isStreaming={isStreaming}
               settings={settings}
-              onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenSettings={() => handleOpenSettings('general')}
               isCentered={false}
               insertedText={insertedCode}
               isWebSearchActive={isWebSearchActive}
@@ -231,13 +240,13 @@ export function App() {
               {t('welcomeTitle')}
             </h1>
 
-            {/* Centered Chat Input Form */}
+            {/* Centered ChatInput Form */}
             <ChatInput
               onSendMessage={sendMessage}
               onStop={stopGeneration}
               isStreaming={isStreaming}
               settings={settings}
-              onOpenSettings={() => setIsSettingsOpen(true)}
+              onOpenSettings={() => handleOpenSettings('general')}
               isCentered={true}
               insertedText={insertedCode}
               isWebSearchActive={isWebSearchActive}
@@ -253,6 +262,7 @@ export function App() {
         onClose={() => setIsSettingsOpen(false)}
         settings={settings}
         onSave={saveSettings}
+        initialTab={settingsTab}
       />
     </div>
   );

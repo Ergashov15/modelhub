@@ -7,11 +7,14 @@ import {
   Settings as SettingsIcon, 
   Search, 
   PanelLeftClose, 
-  X 
+  X,
+  User as UserIcon
 } from 'lucide-react';
 import { ModelHubLogo } from './ModelHubLogo';
 import type { Conversation, Settings } from '../types';
 import { getTranslation, type TranslationKey } from '../i18n/translations';
+import { useAuth } from '../hooks/useAuth';
+import type { SettingsTab } from './SettingsModal';
 
 interface SidebarProps {
   conversations: Conversation[];
@@ -19,10 +22,11 @@ interface SidebarProps {
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
   onDeleteChat: (id: string) => void;
-  onOpenSettings: () => void;
+  onOpenSettings: (tab?: SettingsTab) => void;
   settings: Settings;
   isOpen: boolean;
   onToggle: () => void;
+  streamingChatIds?: Record<string, boolean>;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -35,7 +39,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   settings,
   isOpen,
   onToggle,
+  streamingChatIds,
 }) => {
+  const { user, isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [chatToDelete, setChatToDelete] = useState<Conversation | null>(null);
@@ -73,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
-      className={`fixed inset-y-0 left-0 z-40 h-full w-72 bg-white dark:bg-[#181816] border-r border-[#E5E7EB] dark:border-[#333330] flex flex-col transition-all duration-200 ease-in-out shrink-0 ${
+      className={`fixed inset-y-0 left-0 z-40 h-full h-[100dvh] w-72 bg-white dark:bg-[#181816] border-r border-[#E5E7EB] dark:border-[#333330] flex flex-col transition-all duration-200 ease-in-out shrink-0 pt-safe pb-safe ${
         isOpen
           ? 'translate-x-0 md:relative md:w-72'
           : '-translate-x-full md:translate-x-0 md:w-0 md:border-r-0 md:overflow-hidden'
@@ -179,6 +185,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           filteredConversations.map((conv) => {
             const isActive = conv.id === activeId;
             const hasMessages = Boolean(conv.messages && conv.messages.length > 0);
+            const canDelete = conversations.length > 1 || hasMessages;
 
             return (
               <div
@@ -197,8 +204,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     }`}
                   />
                   <span className="truncate">{getConversationTitle(conv)}</span>
+                  {Boolean(streamingChatIds?.[conv.id]) && (
+                    <span className="flex items-center gap-0.5 shrink-0 ml-1" title="Javob yozilmoqda...">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '0ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '150ms' }} />
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '300ms' }} />
+                    </span>
+                  )}
                 </div>
-                {hasMessages && (
+                {canDelete && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -206,7 +220,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       setChatToDelete(conv);
                     }}
                     title={t('deleteChat')}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-[#9CA3AF] hover:text-[#DC2626] hover:bg-[#FEE2E2] dark:hover:bg-[#7F1D1D]/30 rounded-lg transition-all shrink-0"
+                    className="opacity-70 sm:opacity-0 sm:group-hover:opacity-100 p-1.5 text-[#9CA3AF] hover:text-[#DC2626] hover:bg-[#FEE2E2] dark:hover:bg-[#7F1D1D]/30 rounded-lg transition-all shrink-0 touch-manipulation"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -217,16 +231,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* 5. Footer (Pastki qism: Faqat bitta element - Sozlamalar) */}
-      <div className="p-3 border-t border-[#E5E7EB] dark:border-[#333330] shrink-0">
-        <button
-          type="button"
-          onClick={onOpenSettings}
-          className="w-full py-2.5 px-3.5 rounded-xl text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-white dark:hover:bg-[#20201E] text-sm font-medium flex items-center gap-2.5 transition-colors"
-        >
-          <SettingsIcon className="w-4.5 h-4.5 text-[#6B7280] dark:text-[#9CA3AF]" />
-          <span>{t('settings')}</span>
-        </button>
+      {/* 5. Footer (Profil kartochkasi - bosilganda hisob va sozlamalar ochiladi) */}
+      <div className="p-2.5 shrink-0">
+        {isAuthenticated && user ? (
+          <button
+            type="button"
+            onClick={() => onOpenSettings('account')}
+            className="w-full p-2 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation"
+            title={`${user.display_name || user.username} — ${t('accountDetails')}`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#047857] to-[#065F46] text-white font-semibold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+                {(user.display_name || user.username).charAt(0).toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-xs text-[#1F2937] dark:text-[#ECEBE8] truncate group-hover:text-black dark:group-hover:text-white transition-colors">
+                  {user.display_name || user.username}
+                </div>
+                <div className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] truncate font-mono">
+                  @{user.username}
+                </div>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0 pl-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399]" />
+              <SettingsIcon className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors" />
+            </div>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onOpenSettings('account')}
+            className="w-full p-2 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation"
+            title={t('login')}
+          >
+            <div className="flex items-center gap-2.5 min-w-0 pr-1">
+              <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] dark:bg-[#2A2A27] text-[#6B7280] dark:text-[#9CA3AF] font-medium text-xs flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#383834]">
+                <UserIcon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <div className="font-semibold text-xs text-[#1F2937] dark:text-[#ECEBE8] truncate">
+                  Mehmon rejimi
+                </div>
+                <div className="text-[10px] text-[#047857] dark:text-[#34D399] truncate font-medium">
+                  {t('login')} / {t('register')}
+                </div>
+              </div>
+            </div>
+            <SettingsIcon className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors shrink-0" />
+          </button>
+        )}
       </div>
 
       {/* Suhbatni o'chirishni tasdiqlash modali (Page o'rtasida chiqishi uchun document.body ga createPortal orqali chiqariladi) */}

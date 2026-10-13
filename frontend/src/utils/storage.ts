@@ -74,11 +74,33 @@ export function loadChatMessages(chatId: string): ChatMessage[] {
 }
 
 export function saveChatMessages(chatId: string, messages: ChatMessage[]): void {
+  const sanitized = messages.map((m) => ({ ...m, isStreaming: false }));
   try {
-    const sanitized = messages.map((m) => ({ ...m, isStreaming: false }));
     localStorage.setItem(CHAT_MSG_PREFIX + chatId, JSON.stringify(sanitized));
   } catch (err) {
-    console.error(`Failed to save messages for chat ${chatId}:`, err);
+    console.warn(`localStorage quota exceeded for chat ${chatId}, saving lightweight version:`, err);
+    try {
+      // In case quota is exceeded (e.g. 15 images or video frames),
+      // preserve text content, remove heavy frame arrays and keep lightweight metadata
+      const lightweight = sanitized.map((m) => ({
+        ...m,
+        attachments: m.attachments?.map((a) => ({
+          id: a.id,
+          name: a.name,
+          size: a.size,
+          type: a.type,
+          isImage: a.isImage,
+          isVideo: a.isVideo,
+          videoDuration: a.videoDuration,
+          thumbnailUrl: a.thumbnailUrl,
+          // keep previewUrl if it's not gigantic, omit huge raw frame arrays
+          previewUrl: a.previewUrl && a.previewUrl.length < 400000 ? a.previewUrl : undefined,
+        })),
+      }));
+      localStorage.setItem(CHAT_MSG_PREFIX + chatId, JSON.stringify(lightweight));
+    } catch (e2) {
+      console.error(`Failed to save even lightweight messages for chat ${chatId}:`, e2);
+    }
   }
 }
 
@@ -87,5 +109,89 @@ export function deleteChatStorage(chatId: string): void {
     localStorage.removeItem(CHAT_MSG_PREFIX + chatId);
   } catch (err) {
     console.error(err);
+  }
+}
+
+export interface BackupData {
+  version: 2;
+  exportedAt: number;
+  index: ChatMeta[];
+  chats: Record<string, ChatMessage[]>;
+}
+
+export function exportAllChats(): string {
+  const index = loadChatIndex();
+  const chats: Record<string, ChatMessage[]> = {};
+  index.forEach((meta) => {
+    chats[meta.id] = loadChatMessages(meta.id);
+  });
+  const backup: BackupData = {
+    version: 2,
+    exportedAt: Date.now(),
+    index,
+    chats,
+  };
+  return JSON.stringify(backup, null, 2);
+}
+
+export function importAllChats(jsonString: string): { success: boolean; count: number; error?: string } {
+  try {
+    const data = JSON.parse(jsonString);
+    if (!data || !Array.isArray(data.index) || typeof data.chats !== 'object') {
+      return { success: false, count: 0, error: "Fayl formati noto'g'ri (ModelHub zaxira fayli emas)." };
+    }
+    const currentIndex = loadChatIndex();
+    const existingIds = new Set(currentIndex.map((m) => m.id));
+    const mergedIndex = [...currentIndex];
+    let importedCount = 0;
+
+    data.index.forEach((meta: ChatMeta) => {
+      const msgs = data.chats[meta.id];
+      if (Array.isArray(msgs)) {
+        if (!existingIds.has(meta.id)) {
+          mergedIndex.push(meta);
+          existingIds.add(meta.id);
+        }
+        saveChatMessages(meta.id, msgs);
+        importedCount++;
+      }
+    });
+
+    saveChatIndex(mergedIndex);
+    return { success: true, count: importedCount };
+  } catch (err: any) {
+    return { success: false, count: 0, error: err.message || "Faylni o'qishda xatolik." };
+  }
+}
+
+export function clearAllChatsStorage(): void {
+  try {
+    const index = loadChatIndex();
+    index.forEach((meta) => {
+      localStorage.removeItem(CHAT_MSG_PREFIX + meta.id);
+    });
+    localStorage.removeItem(INDEX_KEY);
+    localStorage.removeItem(ACTIVE_CHAT_KEY);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+export function getStorageUsage(): { usedBytes: number; usedKb: number; usedMb: string } {
+  try {
+    let total = 0;
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        total += (key.length + (localStorage.getItem(key)?.length || 0)) * 2;
+      }
+    }
+    return {
+      usedBytes: total,
+      usedKb: Math.round(total / 1024),
+      usedMb: (total / (1024 * 1024)).toFixed(2),
+    };
+  } catch {
+    return { usedBytes: 0, usedKb: 0, usedMb: '0.00' };
   }
 }

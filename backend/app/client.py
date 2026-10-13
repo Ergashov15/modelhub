@@ -205,8 +205,8 @@ async def stream_chat_completion(
 ) -> AsyncGenerator[str, None]:
     chat_urls = get_candidate_chat_urls(endpoint)
     headers = get_headers(api_key)
-    # Generous timeout for local models initializing on CPU/GPU
-    timeout = httpx.Timeout(connect=15.0, read=300.0, write=30.0, pool=30.0)
+    # Generous timeout for local models initializing on CPU/GPU and large multimodal payloads
+    timeout = httpx.Timeout(connect=30.0, read=300.0, write=180.0, pool=60.0)
     
     async with httpx.AsyncClient(timeout=timeout, verify=False) as client:
         for idx, chat_url in enumerate(chat_urls):

@@ -1,6 +1,21 @@
 export type ThemeMode = 'system' | 'dark' | 'light';
 export type Language = 'uz' | 'en' | 'ru';
 
+export interface User {
+  id: number;
+  username: string;
+  email?: string;
+  display_name?: string;
+  created_at?: string;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  token?: string;
+  user?: User;
+  message?: string;
+}
+
 export interface ModelProfile {
   id: string;
   name: string;
@@ -26,14 +41,24 @@ export interface Settings {
   activeModelId?: string;
 }
 
+export interface VideoFrame {
+  time: string;
+  timestamp: number;
+  dataUrl: string;
+}
+
 export interface FileAttachment {
   id: string;
   name: string;
   size: number;
   type: string;
   isImage: boolean;
+  isVideo?: boolean;
   previewUrl?: string;
+  thumbnailUrl?: string;
   content?: string;
+  videoDuration?: number;
+  videoFrames?: VideoFrame[];
 }
 
 export interface WebSource {

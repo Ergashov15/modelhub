@@ -16,10 +16,13 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   overflow: hidden;
   height: 100vh;
+  height: 100dvh;
+  min-height: -webkit-fill-available;
   background-color: #FFFFFF;
   color: #1F2937;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html.dark body {
@@ -29,7 +32,9 @@ html.dark body {
 
 #root {
   height: 100vh;
+  height: 100dvh;
   width: 100vw;
+  width: 100dvw;
   display: flex;
   overflow: hidden;
   background-color: #FFFFFF;
@@ -37,6 +42,14 @@ html.dark body {
 
 html.dark #root {
   background-color: #181816;
+}
+
+/* Safe area padding utilities for mobile notches and navigation bars */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* Hide scrollbar while preserving scroll functionality */

@@ -2,19 +2,33 @@ import os
 import json
 import logging
 from pathlib import Path
-from fastapi import FastAPI, HTTPException
+from typing import Optional, Dict, Any, List
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse, FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from dotenv import load_dotenv
 
-from .schemas import ChatRequest, TestConnectionRequest, TestConnectionResponse, ModelsRequest
+from .schemas import (
+    ChatRequest, TestConnectionRequest, TestConnectionResponse, ModelsRequest,
+    RegisterRequest, LoginRequest, AuthResponse, AuthUser
+)
 from .client import test_endpoint_connection, fetch_available_models, stream_chat_completion
 from .search import search_duckduckgo
+from .db import (
+    init_db, create_user, authenticate_user, create_session, get_user_by_token, delete_session,
+    get_user_conversations, save_user_conversations, delete_user_conversation
+)
 
 logger = logging.getLogger("qwen_ui.main")
 
 load_dotenv()
+
+# Initialize database tables on startup
+try:
+    init_db()
+except Exception as e:
+    logger.error(f"Database initialization failed: {e}")
 
 app = FastAPI(
     title="Qwen UI Server",
@@ -38,6 +52,105 @@ async def health_check():
         "default_endpoint": os.getenv("DEFAULT_API_BASE_URL", ""),
         "default_model": os.getenv("DEFAULT_MODEL", "")
     }
+
+@app.post("/api/auth/register", response_model=AuthResponse)
+async def register(req: RegisterRequest):
+    try:
+        user = create_user(
+            username=req.username,
+            password=req.password,
+            email=req.email,
+            display_name=req.display_name
+        )
+        token = create_session(user["id"])
+        return AuthResponse(
+            success=True,
+            token=token,
+            user=AuthUser(**user),
+            message="Muvaffaqiyatli ro'yxatdan o'tdingiz!"
+        )
+    except ValueError as e:
+        return AuthResponse(success=False, message=str(e))
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return AuthResponse(success=False, message="Ro'yxatdan o'tishda xatolik yuz berdi.")
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+async def login(req: LoginRequest):
+    user = authenticate_user(req.username, req.password)
+    if not user:
+        return AuthResponse(success=False, message="Noto'g'ri foydalanuvchi nomi yoki parol.")
+    
+    token = create_session(user["id"])
+    return AuthResponse(
+        success=True,
+        token=token,
+        user=AuthUser(**user),
+        message="Xush kelibsiz!"
+    )
+
+@app.get("/api/auth/me", response_model=AuthResponse)
+async def get_me(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        return AuthResponse(success=False, message="Avtorizatsiya talab qilinadi.")
+    
+    token = authorization.replace("Bearer ", "").strip()
+    user = get_user_by_token(token)
+    if not user:
+        return AuthResponse(success=False, message="Sessiya eskirgan yoki topilmadi.")
+    
+    return AuthResponse(success=True, user=AuthUser(**user))
+
+@app.post("/api/auth/logout", response_model=AuthResponse)
+async def logout(authorization: Optional[str] = Header(None)):
+    if authorization and authorization.startswith("Bearer "):
+        token = authorization.replace("Bearer ", "").strip()
+        delete_session(token)
+    return AuthResponse(success=True, message="Hisobdan chiqildi.")
+
+@app.get("/api/user/conversations")
+async def get_user_chats(authorization: Optional[str] = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Avtorizatsiya talab qilinadi.")
+    token = authorization.replace("Bearer ", "").strip()
+    user = get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessiya eskirgan yoki topilmadi.")
+    
+    chats = get_user_conversations(user["id"])
+    return {"conversations": chats}
+
+@app.post("/api/user/conversations")
+async def save_user_chats(
+    req: Dict[str, Any],
+    authorization: Optional[str] = Header(None)
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Avtorizatsiya talab qilinadi.")
+    token = authorization.replace("Bearer ", "").strip()
+    user = get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessiya eskirgan yoki topilmadi.")
+    
+    chats = req.get("conversations", [])
+    if isinstance(chats, list):
+        save_user_conversations(user["id"], chats)
+    return {"success": True, "count": len(chats)}
+
+@app.delete("/api/user/conversations/{conv_id}")
+async def delete_user_chat(
+    conv_id: str,
+    authorization: Optional[str] = Header(None)
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Avtorizatsiya talab qilinadi.")
+    token = authorization.replace("Bearer ", "").strip()
+    user = get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessiya eskirgan yoki topilmadi.")
+    
+    delete_user_conversation(user["id"], conv_id)
+    return {"success": True}
 
 @app.post("/api/test-connection", response_model=TestConnectionResponse)
 async def test_connection(req: TestConnectionRequest):
@@ -95,10 +208,11 @@ async def chat_completion(req: ChatRequest):
                     for idx, s in enumerate(sources)
                 ])
                 web_instruction = (
-                    f"[Internetdan olingan eng so'nggi ma'lumotlar (Web Search Results)]:\n"
+                    f"[Internet qidiruvi ma'lumotlari (Web Search Results)]:\n"
                     f"{sources_text}\n\n"
-                    f"Yo'riqnoma: Yuqoridagi internet qidiruvi ma'lumotlariga tayangan holda foydalanuvchining savoliga aniq va to'liq javob bering. "
-                    f"Matnda keltirilgan ma'lumotlar qaysi manbadan olinganini [1], [2] kabi ko'rsatkichlar bilan ifodalang."
+                    f"Yo'riqnoma: Yuqoridagi internet qidiruvi ma'lumotlariga tayangan holda foydalanuvchining savoliga to'g'ridan-to'g'ri, lo'nda va to'liq javob bering. "
+                    f"Muhim qoida: Javob matnining oxirida manbalar ro'yxatini qayta takrorlab yozmang (chunki tizim manbalarni avtomatik tarzda pastda ko'rsatadi). "
+                    f"Faqat matn ichidagi faktlar yoniga qaysi manbadan olinganini [1], [2] kabi ixcham ko'rsatkichlar bilan belgilab keting."
                 )
 
                 has_system = False
