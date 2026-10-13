@@ -548,6 +548,40 @@ export function useChat(settings: Settings) {
       const decoder = new TextDecoder();
       let isInsideThinkingBlock = false;
       let sseBuffer = '';
+      let rafId: number | null = null;
+      let lastRenderTime = 0;
+
+      const scheduleRender = () => {
+        const now = performance.now();
+        if (now - lastRenderTime >= 25) {
+          lastRenderTime = now;
+          if (rafId) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+          }
+          const currentMsgs: ChatMessage[] = [
+            ...baseHistory,
+            userMessage,
+            { ...assistantMessage, content: accumulatedContent, isStreaming: true },
+          ];
+          setConversations((prev) =>
+            prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
+          );
+        } else if (!rafId) {
+          rafId = requestAnimationFrame(() => {
+            rafId = null;
+            lastRenderTime = performance.now();
+            const currentMsgs: ChatMessage[] = [
+              ...baseHistory,
+              userMessage,
+              { ...assistantMessage, content: accumulatedContent, isStreaming: true },
+            ];
+            setConversations((prev) =>
+              prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
+            );
+          });
+        }
+      };
 
       while (true) {
         const { done, value } = await reader.read();
@@ -589,7 +623,6 @@ export function useChat(settings: Settings) {
             setConversations((prev) =>
               prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
             );
-            persistChatMessages(targetChatId, currentMsgs, false);
             continue;
           }
 
@@ -634,17 +667,14 @@ export function useChat(settings: Settings) {
 
           if (chunkToAppend) {
             accumulatedContent += chunkToAppend;
-            const currentMsgs: ChatMessage[] = [
-              ...baseHistory,
-              userMessage,
-              { ...assistantMessage, content: accumulatedContent, isStreaming: true },
-            ];
-            setConversations((prev) =>
-              prev.map((c) => (c.id === targetChatId ? { ...c, messages: currentMsgs } : c))
-            );
-            persistChatMessages(targetChatId, currentMsgs, false);
+            scheduleRender();
           }
         }
+      }
+
+      if (rafId) {
+        cancelAnimationFrame(rafId);
+        rafId = null;
       }
 
       // Flush remaining line if present

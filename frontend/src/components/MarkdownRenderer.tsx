@@ -34,7 +34,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   }, [content, sources]);
 
   return (
-    <div className="prose prose-base dark:prose-invert max-w-none w-full font-sans text-sm sm:text-base leading-relaxed text-[#1F1E1D] dark:text-[#ECEBE8] break-words">
+    <div className="prose prose-base dark:prose-invert max-w-none w-full font-sans text-sm sm:text-base leading-relaxed text-[#1F1E1D] dark:text-[#ECEBE8] break-words [transform:translateZ(0)]">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
@@ -174,7 +174,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
         {processedContent}
       </ReactMarkdown>
       {isStreaming && (
-        <span className="inline-block w-2 h-4.5 ml-1 bg-[#047857] animate-pulse align-middle" />
+        <span className="inline-block w-1.5 h-3.5 ml-1 bg-[#047857] dark:bg-[#34D399] rounded-2xs animate-pulse align-baseline select-none" />
       )}
     </div>
   );

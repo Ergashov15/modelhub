@@ -250,11 +250,14 @@ export const ChatView: React.FC<ChatViewProps> = ({
   const t = (key: TranslationKey) => getTranslation(settings.language, key);
 
   useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollTo({
-        top: containerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
+    const el = containerRef.current;
+    if (!el) return;
+
+    // Check if user is scrolled near bottom (within 150px)
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 150;
+    if (isNearBottom) {
+      // Direct scroll without animation eliminates subpixel font jitter and text flickering
+      el.scrollTop = el.scrollHeight;
     }
   }, [messages]);
 
