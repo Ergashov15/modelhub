@@ -3,14 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Qwen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content" />
+    <title>ModelHub</title>
     <script>
       (function() {
         try {
           var raw = localStorage.getItem('qwen_ui_settings_v2');
-          var theme = raw ? JSON.parse(raw).theme : 'system';
-          var isDark = theme === 'dark' || (theme !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          var theme = raw ? JSON.parse(raw).theme : 'light';
+          if (theme === 'system') theme = 'light';
+          var isDark = theme === 'dark';
           if (isDark) {
             document.documentElement.classList.add('dark');
             document.documentElement.classList.remove('light');

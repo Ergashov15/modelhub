@@ -320,16 +320,22 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
-  const placeholderText = isModelConfigured
-    ? t('inputPlaceholderConfigured')
-    : t('inputPlaceholderUnconfigured');
+  const handleFocus = () => {
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.scrollIntoView({ block: 'nearest' });
+      }
+    }, 200);
+  };
+
+  const placeholderText = t('inputPlaceholderConfigured');
 
   return (
     <div
       className={
         isCentered
-          ? 'w-full max-w-4xl mx-auto px-1'
-          : 'w-full shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-2 sm:pt-4 pb-mobile-chat'
+          ? 'w-full max-w-4xl mx-auto px-2 pb-3 sm:pb-0'
+          : 'w-full shrink-0 bg-gradient-to-t from-white via-white/95 to-transparent dark:from-[#181816] dark:via-[#181816]/95 dark:to-transparent pt-1.5 sm:pt-4 pb-mobile-chat'
       }
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
@@ -480,6 +486,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={handleFocus}
               placeholder={placeholderText}
               rows={1}
               disabled={isStreaming}

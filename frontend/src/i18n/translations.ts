@@ -76,7 +76,7 @@ export const translations = {
     currentModel: 'Faol model',
     changeSettings: 'O‘zgartirish',
 
-    inputPlaceholderConfigured: 'Qanday yordam bera olaman?',
+    inputPlaceholderConfigured: 'Istalgan narsani so‘rang',
     inputPlaceholderUnconfigured: 'Boshlash uchun server sozlamalarini kiriting...',
     disclaimer: 'Model xatoliklarga yo‘l qo‘yishi mumkin. Muhim ma’lumotlarni tekshiring.',
     send: 'Yuborish',
@@ -241,7 +241,7 @@ export const translations = {
     currentModel: 'Active model',
     changeSettings: 'Change',
 
-    inputPlaceholderConfigured: 'How can I help you today?',
+    inputPlaceholderConfigured: 'Ask anything...',
     inputPlaceholderUnconfigured: 'Configure endpoint and model to get started...',
     disclaimer: 'The model can make mistakes. Verify important info.',
     send: 'Send',
@@ -406,7 +406,7 @@ export const translations = {
     currentModel: 'Активная модель',
     changeSettings: 'Изменить',
 
-    inputPlaceholderConfigured: 'Чем я могу помочь?',
+    inputPlaceholderConfigured: 'Спросите что угодно...',
     inputPlaceholderUnconfigured: 'Укажите адрес сервера и модель в настройках...',
     disclaimer: 'Модель может ошибаться. Проверяйте важную информацию.',
     send: 'Отправить',

@@ -14,7 +14,6 @@ import {
   Sparkles, 
   Sun, 
   Moon, 
-  Monitor, 
   Languages, 
   Plus, 
   Trash2, 
@@ -1090,19 +1089,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                   <label className="block text-xs sm:text-sm font-semibold text-[#1F2937] dark:text-[#ECEBE8] mb-2 flex items-center gap-1.5">
                     <Sun className="w-4 h-4 text-[#047857] dark:text-[#34D399]" /> {t('theme')}
                   </label>
-                  <div className="grid grid-cols-3 gap-1 p-1 bg-[#EEEEEA] dark:bg-[#252522] rounded-xl border border-[#E5E7EB] dark:border-[#383835]">
-                    <button
-                      type="button"
-                      onClick={() => handleThemeChange('system')}
-                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs sm:text-sm transition-all ${
-                        theme === 'system'
-                          ? 'bg-white dark:bg-[#1E1E1C] text-[#1F2937] dark:text-[#ECEBE8] shadow-xs font-semibold'
-                          : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
-                      }`}
-                    >
-                      <Monitor className="w-3.5 h-3.5" />
-                      <span>{t('themeSystem')}</span>
-                    </button>
+                  <div className="grid grid-cols-2 gap-1 p-1 bg-[#EEEEEA] dark:bg-[#252522] rounded-xl border border-[#E5E7EB] dark:border-[#383835]">
                     <button
                       type="button"
                       onClick={() => handleThemeChange('light')}
@@ -1112,7 +1099,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                           : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
                       }`}
                     >
-                      <Sun className="w-3.5 h-3.5" />
+                      <Sun className="w-3.5 h-3.5 text-[#CC785C]" />
                       <span>{t('themeLight')}</span>
                     </button>
                     <button
@@ -1124,7 +1111,7 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
                           : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] font-medium'
                       }`}
                     >
-                      <Moon className="w-3.5 h-3.5" />
+                      <Moon className="w-3.5 h-3.5 text-[#D97757]" />
                       <span>{t('themeDark')}</span>
                     </button>
                   </div>

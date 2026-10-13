@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   PanelLeftOpen, 
   Sun, 
   Moon, 
-  Monitor,
   RotateCw
 } from 'lucide-react';
 import { useSettings } from './hooks/useSettings';
@@ -74,13 +73,38 @@ export function App() {
     }
   };
 
+  // Dynamic mobile keyboard and viewport height tracking
+  useEffect(() => {
+    const updateViewportHeight = () => {
+      const vv = window.visualViewport;
+      const height = vv ? vv.height : window.innerHeight;
+      document.documentElement.style.setProperty('--app-height', `${height}px`);
+    };
+
+    updateViewportHeight();
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateViewportHeight);
+      window.visualViewport.addEventListener('scroll', updateViewportHeight);
+    } else {
+      window.addEventListener('resize', updateViewportHeight);
+    }
+
+    return () => {
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateViewportHeight);
+        window.visualViewport.removeEventListener('scroll', updateViewportHeight);
+      } else {
+        window.removeEventListener('resize', updateViewportHeight);
+      }
+    };
+  }, []);
+
   const t = (key: TranslationKey) => getTranslation(settings.language, key);
 
-  // Quick theme toggle cycle: system -> light -> dark -> system
+  // Quick theme toggle: light <-> dark (system mode removed)
   const handleCycleTheme = () => {
-    const order: ThemeMode[] = ['system', 'light', 'dark'];
-    const currentIndex = order.indexOf(settings.theme || 'system');
-    const nextTheme = order[(currentIndex + 1) % order.length];
+    const nextTheme: ThemeMode = settings.theme === 'dark' ? 'light' : 'dark';
     saveSettings({ theme: nextTheme });
   };
 
@@ -106,21 +130,20 @@ export function App() {
   };
 
   const getThemeIcon = (theme: ThemeMode) => {
-    switch (theme) {
-      case 'light':
-        return <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-[#CC785C]" />;
-      case 'dark':
-        return <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97757]" />;
-      case 'system':
-      default:
-        return <Monitor className="w-4 h-4 sm:w-5 sm:h-5 text-[#6F6D66] dark:text-[#99978F]" />;
-    }
+    return theme === 'dark' ? (
+      <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-[#D97757]" />
+    ) : (
+      <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-[#CC785C]" />
+    );
   };
 
   const [insertedCode, setInsertedCode] = useState<string>('');
 
   return (
-    <div className="flex h-screen h-[100dvh] w-full overflow-hidden bg-white dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased">
+    <div
+      className="flex w-full overflow-hidden bg-white dark:bg-[#181816] text-[#1F2937] dark:text-[#ECEBE8] font-sans antialiased"
+      style={{ height: 'var(--app-height, 100dvh)' }}
+    >
       {/* Sidebar */}
       <Sidebar
         conversations={conversations}
@@ -192,20 +215,14 @@ export function App() {
               <RotateCw className="w-4 h-4" />
             </button>
 
-            {/* Quick Theme Switcher (System / Light / Dark) */}
+            {/* Quick Theme Switcher (Light / Dark) */}
             <button
               type="button"
               onClick={handleCycleTheme}
               className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#1F2937] dark:text-[#ECEBE8] flex items-center justify-center transition-colors shadow-2xs touch-manipulation"
-              title={`${t('theme')}: ${
-                settings.theme === 'light'
-                  ? t('themeLight')
-                  : settings.theme === 'dark'
-                  ? t('themeDark')
-                  : t('themeSystem')
-              }`}
+              title={`${t('theme')}: ${settings.theme === 'dark' ? t('themeDark') : t('themeLight')}`}
             >
-              {getThemeIcon(settings.theme || 'system')}
+              {getThemeIcon(settings.theme || 'light')}
             </button>
 
             {/* Quick Language Switcher (UZ / ENG / RU) */}

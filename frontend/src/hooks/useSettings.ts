@@ -24,7 +24,7 @@ ASOSIY QOIDALAR:
 
 3. Kontekst va suhbat uzluksizligi:
 - Oldingi xabarlar tarixini to'liq inobatga olgan holda suhbatni mantiqiy va uzluksiz davom ettiring.`,
-  theme: 'system',
+  theme: 'light',
   language: 'uz',
   models: [],
   activeModelId: '',
@@ -32,6 +32,9 @@ ASOSIY QOIDALAR:
 
 function normalizeSettings(s: Partial<Settings>): Settings {
   const result: Settings = { ...DEFAULT_SETTINGS, ...s };
+  if (result.theme === 'system') {
+    result.theme = 'light';
+  }
   let models = Array.isArray(result.models) ? [...result.models] : [];
 
   // Migration: Ensure systemPrompt is updated to universal ChatGPT assistant (clearing old rigid engineering rules)
