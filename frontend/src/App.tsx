@@ -181,11 +181,11 @@ export function App() {
 
           {/* Right Header Actions: Refresh + Theme + Language */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-            {/* Quick Refresh Button: Allows instant page refresh on mobile & desktop */}
+            {/* Quick Refresh Button: Only on mobile browsers */}
             <button
               type="button"
               onClick={() => window.location.reload()}
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#6B7280] hover:text-[#047857] dark:text-[#9CA3AF] dark:hover:text-[#34D399] flex items-center justify-center transition-colors shadow-2xs touch-manipulation"
+              className="flex sm:hidden w-9 h-9 rounded-xl bg-white dark:bg-[#20201E] hover:bg-[#F9FAFB] dark:hover:bg-[#282825] border border-[#E5E7EB] dark:border-[#333330] text-[#6B7280] hover:text-[#047857] dark:text-[#9CA3AF] dark:hover:text-[#34D399] items-center justify-center transition-colors shadow-2xs touch-manipulation"
               title={t('refreshPage')}
               aria-label="Refresh page"
             >
