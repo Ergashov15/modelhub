@@ -324,20 +324,21 @@ async def chat_completion(req: ChatRequest, request: Request):
         else:
             req.messages = req.messages[-MAX_HISTORY_MESSAGES:]
 
-    # 4. Input Guardrail (Strict check across all incoming messages to prevent hidden injection & prompt leaking)
+    # 4. Input Guardrail (Evaluates active user query so chat does not lock on previous turns)
     last_user_query = ""
     for m in reversed(req.messages):
         if m.role == "user":
             if isinstance(m.content, str):
                 last_user_query = m.content
             elif isinstance(m.content, list):
-                for part in m.content:
-                    if isinstance(part, dict) and part.get("type") == "text":
-                        last_user_query = part.get("text", "")
-                        break
+                text_parts = [
+                    part.get("text", "") for part in m.content
+                    if isinstance(part, dict) and part.get("type") == "text"
+                ]
+                last_user_query = "\n".join(text_parts)
             break
 
-    # Combine text from all incoming messages to catch hidden exploits in conversation history
+    # Context size sanity check to prevent memory exhaustion DOS
     all_incoming_texts = []
     for m in req.messages:
         if isinstance(m.content, str):
@@ -355,7 +356,8 @@ async def chat_completion(req: ChatRequest, request: Request):
             detail=f"Suhbatning umumiy hajmi xavfsiz chegaradan oshdi ({len(full_context_to_check):,} belgi, maksimal: {MAX_TOTAL_CONTEXT_CHARS:,} belgi). Iltimos, yangi chat boshlang."
         )
 
-    is_safe, refusal_reason = check_input_guardrail(full_context_to_check)
+    # Check guardrail specifically on the current user query to allow continued conversation
+    is_safe, refusal_reason = check_input_guardrail(last_user_query)
     if not is_safe:
         async def stream_refusal():
             refusal_data = {
@@ -372,6 +374,10 @@ async def chat_completion(req: ChatRequest, request: Request):
         return StreamingResponse(stream_refusal(), media_type="text/event-stream")
 
     messages_data = [m.model_dump() for m in req.messages]
+    for m in messages_data:
+        if m.get("role") == "assistant" and isinstance(m.get("content"), str):
+            # Clean thinking tags from past assistant turns so context stays continuous
+            m["content"] = re.sub(r"<think>[\s\S]*?(?:<\/think>|$)", "", m["content"]).strip()
     sources = []
 
     # 5. Mode Determination: fast (default), think, or search
@@ -420,7 +426,7 @@ async def chat_completion(req: ChatRequest, request: Request):
                 messages_data.insert(0, {"role": "system", "content": web_instruction})
 
     # Medical Query Handling: Inject non-prescriptive, informational-only instruction with mandatory doctor warning
-    is_medical = is_medical_query(last_user_query) or is_medical_query(full_context_to_check)
+    is_medical = is_medical_query(last_user_query)
     if is_medical:
         medical_instruction = (
             "[TIBBIY XAVFSIZLIK TALABI]: Foydalanuvchi tibbiyot, salomatlik, dori-darmon yoki kasallik haqida so'ramoqda. "
