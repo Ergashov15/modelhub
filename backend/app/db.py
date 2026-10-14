@@ -239,3 +239,14 @@ def delete_user_conversation(user_id: int, conv_id: str) -> None:
     finally:
         conn.close()
 
+def clear_user_conversations(user_id: int) -> None:
+    conn = get_db_connection()
+    try:
+        with conn:
+            conn.execute(
+                "DELETE FROM user_conversations WHERE user_id = ?",
+                (user_id,)
+            )
+    finally:
+        conn.close()
+

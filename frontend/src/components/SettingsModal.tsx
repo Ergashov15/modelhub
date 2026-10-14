@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   Key, 
@@ -48,6 +49,7 @@ interface SettingsModalProps {
   settings: Settings;
   onSave: (settings: Partial<Settings>) => void;
   initialTab?: SettingsTab;
+  onClearAllChats?: () => Promise<void> | void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -56,6 +58,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   settings,
   onSave,
   initialTab = 'general',
+  onClearAllChats,
 }) => {
   if (!isOpen) return null;
 
@@ -65,6 +68,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       onClose={onClose}
       onSave={onSave}
       initialTab={initialTab}
+      onClearAllChats={onClearAllChats}
     />
   );
 };
@@ -74,6 +78,7 @@ interface SettingsModalContentProps {
   onClose: () => void;
   onSave: (settings: Partial<Settings>) => void;
   initialTab: SettingsTab;
+  onClearAllChats?: () => Promise<void> | void;
 }
 
 const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
@@ -81,8 +86,23 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
   onClose,
   onSave,
   initialTab,
+  onClearAllChats,
 }) => {
   const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && showClearConfirm) {
+        e.stopPropagation();
+        setShowClearConfirm(false);
+      }
+    };
+    if (showClearConfirm) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showClearConfirm]);
 
   // Auth Hook
   const { 
@@ -327,13 +347,22 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
   };
 
   const handleClearAllChats = () => {
-    if (window.confirm(t('clearAllConfirm'))) {
-      clearAllChatsStorage();
+    setShowClearConfirm(true);
+  };
+
+  const handleConfirmClearAll = async () => {
+    setShowClearConfirm(false);
+    try {
+      if (onClearAllChats) {
+        await onClearAllChats();
+      } else {
+        clearAllChatsStorage();
+      }
       setDataNotice({ type: 'success', text: 'Barcha chatlar tozalandi!' });
       setStorageUsage(getStorageUsage());
-      setTimeout(() => {
-        window.location.reload();
-      }, 800);
+    } catch (err) {
+      console.error('Failed to clear chats:', err);
+      setDataNotice({ type: 'error', text: 'Chatlarni tozalashda xatolik yuz berdi.' });
     }
   };
 
@@ -1279,6 +1308,54 @@ const SettingsModalContent: React.FC<SettingsModalContentProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Barcha suhbatlarni o'chirishni tasdiqlash modali (huddi sidebardagi kabi) */}
+      {showClearConfirm && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/50 dark:bg-black/70 backdrop-blur-2xs animate-in fade-in duration-150"
+          onClick={() => setShowClearConfirm(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white dark:bg-[#1E1E1C] border border-[#E5E7EB] dark:border-[#333330] p-5 shadow-2xl animate-in zoom-in-95 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="p-2.5 rounded-xl bg-[#FEE2E2] dark:bg-[#7F1D1D]/30 text-[#DC2626] dark:text-[#F87171] shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-[#1F2937] dark:text-[#ECEBE8]">
+                  {t('clearAllChats')}
+                </h3>
+                <p className="mt-1 text-sm text-[#6B7280] dark:text-[#9CA3AF] leading-relaxed">
+                  {t('clearAllConfirm')}
+                </p>
+                <div className="mt-2.5 px-3 py-2 rounded-xl bg-[#FEF2F2] dark:bg-[#7F1D1D]/20 border border-[#FCA5A5]/40 text-xs text-[#DC2626] dark:text-[#F87171]">
+                  {t('clearAllChatsDesc')}
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 flex items-center justify-center gap-3 w-full">
+              <button
+                type="button"
+                onClick={() => setShowClearConfirm(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl text-sm font-medium text-[#1F2937] hover:text-black dark:text-[#ECEBE8] dark:hover:text-white bg-white dark:bg-[#262624] hover:bg-[#F9FAFB] dark:hover:bg-[#2E2E2A] border border-[#E5E7EB] dark:border-[#52504B] shadow-2xs transition-colors text-center cursor-pointer"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmClearAll}
+                className="flex-1 py-2.5 px-4 rounded-xl text-sm font-medium bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-xs transition-colors text-center cursor-pointer"
+              >
+                {t('confirmDeleteBtn')}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 };

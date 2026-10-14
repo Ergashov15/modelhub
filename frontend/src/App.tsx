@@ -15,7 +15,7 @@ import { SettingsModal, type SettingsTab } from './components/SettingsModal';
 import { ModelSelector } from './components/ModelSelector';
 import { ModelHubLogo } from './components/ModelHubLogo';
 import { getTranslation, type TranslationKey } from './i18n/translations';
-import type { ThemeMode, Language } from './types';
+import type { ThemeMode, Language, ChatMode } from './types';
 
 export function App() {
   const { settings, saveSettings, switchModel } = useSettings();
@@ -28,6 +28,7 @@ export function App() {
     setActiveId,
     createNewChat,
     deleteChat,
+    clearAllChats,
     sendMessage,
     stopGeneration,
     isStreaming,
@@ -41,22 +42,22 @@ export function App() {
     setSettingsTab(tab);
     setIsSettingsOpen(true);
   };
-  const [isWebSearchActive, setIsWebSearchActive] = useState<boolean>(() => {
+
+  const [chatMode, setChatMode] = useState<ChatMode>(() => {
     try {
-      return localStorage.getItem('modelhub_web_search') === 'true';
-    } catch {
-      return false;
-    }
+      const saved = localStorage.getItem('modelhub_chat_mode');
+      if (saved === 'fast' || saved === 'think' || saved === 'search') {
+        return saved;
+      }
+    } catch {}
+    return 'fast'; // Default is ⚡ Fast mode for instant 0.1-0.3s response
   });
 
-  const handleToggleWebSearch = () => {
-    setIsWebSearchActive((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem('modelhub_web_search', String(next));
-      } catch {}
-      return next;
-    });
+  const handleChangeChatMode = (mode: ChatMode) => {
+    setChatMode(mode);
+    try {
+      localStorage.setItem('modelhub_chat_mode', mode);
+    } catch {}
   };
 
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -253,8 +254,8 @@ export function App() {
               onOpenSettings={() => handleOpenSettings('general')}
               isCentered={false}
               insertedText={insertedCode}
-              isWebSearchActive={isWebSearchActive}
-              onToggleWebSearch={handleToggleWebSearch}
+              chatMode={chatMode}
+              onChangeChatMode={handleChangeChatMode}
             />
           </>
         ) : (
@@ -278,8 +279,8 @@ export function App() {
               onOpenSettings={() => handleOpenSettings('general')}
               isCentered={true}
               insertedText={insertedCode}
-              isWebSearchActive={isWebSearchActive}
-              onToggleWebSearch={handleToggleWebSearch}
+              chatMode={chatMode}
+              onChangeChatMode={handleChangeChatMode}
             />
           </div>
         )}
@@ -292,6 +293,7 @@ export function App() {
         settings={settings}
         onSave={saveSettings}
         initialTab={settingsTab}
+        onClearAllChats={clearAllChats}
       />
     </div>
   );

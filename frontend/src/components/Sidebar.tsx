@@ -88,7 +88,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* 1. Header (Yuqori qism) */}
       <div className="p-3.5 pb-2.5 flex items-center justify-between shrink-0">
         {/* Chapda: ModelHub Premium Logo & Branding */}
-        <ModelHubLogo size="md" showText={true} showBadge={true} />
+        <ModelHubLogo size="md" showText={true} />
 
         {/* Oʻngda: Qidiruv (Search) va panelni yashirish (Sidebar toggle) */}
         <div className="flex items-center gap-1">
@@ -232,53 +232,53 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </div>
 
       {/* 5. Footer (Profil kartochkasi - bosilganda hisob va sozlamalar ochiladi) */}
-      <div className="p-2.5 shrink-0">
+      <div className="p-3 shrink-0 border-t border-[#F0F2F5] dark:border-[#272725]">
         {isAuthenticated && user ? (
           <button
             type="button"
             onClick={() => onOpenSettings('account')}
-            className="w-full p-2 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation"
+            className="w-full p-2.5 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation cursor-pointer"
             title={`${user.display_name || user.username} — ${t('accountDetails')}`}
           >
-            <div className="flex items-center gap-2.5 min-w-0 pr-1">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#047857] to-[#065F46] text-white font-semibold text-xs flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="flex items-center gap-3 min-w-0 pr-1">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#047857] to-[#065F46] text-white font-semibold text-sm flex items-center justify-center shrink-0 shadow-xs ring-2 ring-emerald-500/20">
                 {(user.display_name || user.username).charAt(0).toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="font-semibold text-xs text-[#1F2937] dark:text-[#ECEBE8] truncate group-hover:text-black dark:group-hover:text-white transition-colors">
+                <div className="font-semibold text-sm text-[#1F2937] dark:text-[#ECEBE8] truncate group-hover:text-black dark:group-hover:text-white transition-colors leading-tight">
                   {user.display_name || user.username}
                 </div>
-                <div className="text-[10px] text-[#6B7280] dark:text-[#9CA3AF] truncate font-mono">
+                <div className="text-xs text-[#6B7280] dark:text-[#9CA3AF] truncate font-mono mt-0.5">
                   @{user.username}
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0 pl-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#047857] dark:bg-[#34D399]" />
-              <SettingsIcon className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors" />
+            <div className="flex items-center gap-2 shrink-0 pl-1">
+              <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#34D399] ring-2 ring-emerald-400/20" />
+              <SettingsIcon className="w-4.5 h-4.5 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors" />
             </div>
           </button>
         ) : (
           <button
             type="button"
             onClick={() => onOpenSettings('account')}
-            className="w-full p-2 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation"
+            className="w-full p-2.5 rounded-xl bg-white dark:bg-[#1E1E1C] hover:bg-[#F3F4F6] dark:hover:bg-[#252522] border border-[#E5E7EB] dark:border-[#333330] flex items-center justify-between text-left transition-all duration-150 group shadow-2xs touch-manipulation cursor-pointer"
             title={t('login')}
           >
-            <div className="flex items-center gap-2.5 min-w-0 pr-1">
-              <div className="w-8 h-8 rounded-lg bg-[#F3F4F6] dark:bg-[#2A2A27] text-[#6B7280] dark:text-[#9CA3AF] font-medium text-xs flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#383834]">
-                <UserIcon className="w-4 h-4" />
+            <div className="flex items-center gap-3 min-w-0 pr-1">
+              <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] dark:bg-[#2A2A27] text-[#4B5563] dark:text-[#9CA3AF] font-medium text-sm flex items-center justify-center shrink-0 border border-[#E5E7EB] dark:border-[#383834]">
+                <UserIcon className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <div className="font-semibold text-xs text-[#1F2937] dark:text-[#ECEBE8] truncate">
+                <div className="font-semibold text-sm text-[#1F2937] dark:text-[#ECEBE8] truncate leading-tight">
                   Mehmon rejimi
                 </div>
-                <div className="text-[10px] text-[#047857] dark:text-[#34D399] truncate font-medium">
+                <div className="text-xs text-[#047857] dark:text-[#34D399] truncate font-medium mt-0.5">
                   {t('login')} / {t('register')}
                 </div>
               </div>
             </div>
-            <SettingsIcon className="w-4 h-4 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors shrink-0" />
+            <SettingsIcon className="w-4.5 h-4.5 text-[#9CA3AF] group-hover:text-[#4B5563] dark:group-hover:text-[#ECEBE8] transition-colors shrink-0" />
           </button>
         )}
       </div>

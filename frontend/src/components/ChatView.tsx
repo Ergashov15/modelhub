@@ -11,7 +11,10 @@ import {
   Globe,
   ExternalLink,
   X,
-  Maximize2
+  Maximize2,
+  Brain,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 import type { ChatMessage, Settings, FileAttachment } from '../types';
 import { getTranslation, type TranslationKey } from '../i18n/translations';
@@ -116,6 +119,61 @@ function parseThoughtAndContent(content: string) {
 
   return { thought: null, response: content, isThinking: false };
 }
+
+/**
+ * Collapsible Thinking/Reasoning block for live streaming thoughts (Deep-Think mode)
+ */
+const ThinkingBlock: React.FC<{
+  thought: string;
+  isThinking: boolean;
+  language: 'uz' | 'en' | 'ru';
+}> = ({ thought, isThinking, language }) => {
+  const [isExpanded, setIsExpanded] = useState<boolean>(isThinking);
+
+  useEffect(() => {
+    if (isThinking) {
+      setIsExpanded(true);
+    }
+  }, [isThinking]);
+
+  const t = (key: TranslationKey) => getTranslation(language, key);
+
+  return (
+    <div className="w-full mb-3 rounded-2xl border border-purple-200/70 dark:border-purple-900/40 bg-purple-50/50 dark:bg-purple-950/20 overflow-hidden transition-all shadow-2xs">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-medium text-purple-800 dark:text-purple-300 hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-colors select-none"
+      >
+        <div className="flex items-center gap-2 min-w-0">
+          <Brain className={`w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 ${isThinking ? 'animate-pulse' : ''}`} />
+          <span className="truncate font-semibold text-xs sm:text-[13px]">
+            {isThinking ? t('thinkingInProgress') : t('thinkingFinished')}
+          </span>
+          {isThinking && (
+            <span className="flex gap-1 items-center ml-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 shrink-0">
+          <span className="text-[11px] opacity-80 hidden sm:inline">
+            {isExpanded ? (language === 'uz' ? 'Yashirish' : language === 'ru' ? 'Скрыть' : 'Collapse') : (language === 'uz' ? 'Ko‘rish' : language === 'ru' ? 'Показать' : 'Expand')}
+          </span>
+          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </div>
+      </button>
+
+      {isExpanded && (
+        <div className="px-3.5 pb-3.5 pt-2 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 font-sans leading-relaxed border-t border-purple-200/50 dark:border-purple-900/30 whitespace-pre-wrap select-text max-h-96 overflow-y-auto no-scrollbar border-l-2 border-l-purple-500/70 ml-2 pl-3 my-1">
+          {thought}
+        </div>
+      )}
+    </div>
+  );
+};
 
 /**
  * Message attachments display component supporting video playback,
@@ -306,9 +364,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           const prevMessage = index > 0 ? messages[index - 1] : undefined;
           const thinkingStatus = getThinkingStatus(prevMessage, settings.language);
           const parsed = parseThoughtAndContent(message.content);
-          const displayResponse = message.isStreaming
-            ? parsed.response
-            : (parsed.response || parsed.thought || '');
+          const displayResponse = parsed.response || (!parsed.thought ? message.content : '');
 
           if (isUser) {
             return (
@@ -355,8 +411,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   </div>
                 ) : (
                   <>
-                    {/* Loading indicator while model is generating/thinking */}
-                    {message.isStreaming && !displayResponse && (
+                    {/* 1. Real-time Thinking Block (Deep-Think mode) */}
+                    {parsed.thought && (
+                      <ThinkingBlock
+                        thought={parsed.thought}
+                        isThinking={parsed.isThinking}
+                        language={settings.language}
+                      />
+                    )}
+
+                    {/* 2. Loading indicator before first token arrives */}
+                    {message.isStreaming && !parsed.thought && !displayResponse && (
                       <div className="flex items-center gap-2.5 py-2.5 text-xs sm:text-sm text-[#6B7280] dark:text-[#9CA3AF] my-1.5 select-none animate-pulse">
                         {message.sources && message.sources.length > 0 ? (
                           <>

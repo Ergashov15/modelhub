@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import type { ChatMessage, Conversation, Settings, FileAttachment } from '../types';
+import type { ChatMessage, Conversation, Settings, FileAttachment, ChatMode } from '../types';
 import { getTranslation } from '../i18n/translations';
 import { useAuth } from './useAuth';
 import {
@@ -9,6 +9,7 @@ import {
   loadChatMessages,
   saveChatMessages,
   deleteChatStorage,
+  clearAllChatsStorage,
   type ChatMeta,
 } from '../utils/storage';
 
@@ -314,6 +315,52 @@ export function useChat(settings: Settings) {
     });
   };
 
+  const clearAllChats = useCallback(async () => {
+    // 1. Abort all active streams
+    abortControllersRef.current.forEach((controller) => {
+      try {
+        controller.abort();
+      } catch {}
+    });
+    abortControllersRef.current.clear();
+    setStreamingChatIds({});
+
+    // 2. Clear any pending saves
+    saveTimeoutsRef.current.forEach((timeoutId) => clearTimeout(timeoutId));
+    saveTimeoutsRef.current.clear();
+    pendingSavesRef.current.clear();
+
+    // 3. Clear server conversations if authenticated
+    if (tokenRef.current) {
+      try {
+        await fetch('/api/user/conversations', {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${tokenRef.current}` },
+        });
+      } catch (err) {
+        console.warn('Failed to clear conversations on server:', err);
+      }
+    }
+
+    // 4. Clear all localStorage
+    clearAllChatsStorage();
+
+    // 5. Create a clean fresh conversation
+    const freshId = 'conv-' + Date.now();
+    const freshConv: Conversation = {
+      id: freshId,
+      title: '',
+      messages: [],
+      updatedAt: Date.now(),
+    };
+    saveChatIndex([{ id: freshId, title: '', updatedAt: freshConv.updatedAt }]);
+    saveChatMessages(freshId, []);
+
+    // 6. Update state
+    setConversations([freshConv]);
+    setActiveId(freshId);
+  }, []);
+
   const stopGeneration = (chatId?: string) => {
     const targetId = chatId || activeId;
     const controller = abortControllersRef.current.get(targetId);
@@ -340,7 +387,11 @@ export function useChat(settings: Settings) {
     );
   };
 
-  const sendMessage = async (content: string, attachments?: FileAttachment[], webSearch?: boolean) => {
+  const sendMessage = async (
+    content: string,
+    attachments?: FileAttachment[],
+    chatMode: ChatMode = 'fast'
+  ) => {
     const trimmed = content.trim();
     // Explicitly lock the target conversation ID at the moment of sending
     const targetChatId = activeId;
@@ -525,7 +576,9 @@ export function useChat(settings: Settings) {
           top_p: settings.topP,
           max_tokens: settings.maxTokens,
           stream: true,
-          web_search: !!webSearch,
+          mode: chatMode,
+          think: chatMode === 'fast' ? false : (chatMode === 'think' ? true : undefined),
+          web_search: chatMode === 'search',
         }),
       });
 
@@ -752,6 +805,7 @@ export function useChat(settings: Settings) {
     setActiveId: switchChat,
     createNewChat,
     deleteChat,
+    clearAllChats,
     sendMessage,
     stopGeneration,
     isStreaming: isStreamingActiveChat,

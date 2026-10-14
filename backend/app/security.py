@@ -45,8 +45,10 @@ def validate_endpoint_url(endpoint: str) -> Tuple[bool, Optional[str]]:
         except Exception:
             pass
 
-    # Allow private endpoints if explicitly enabled for local dev / testing
-    allow_private = os.getenv("ALLOW_PRIVATE_ENDPOINTS", "false").lower() in ("true", "1", "yes")
+    # Allow private endpoints for local development/running unless explicitly deployed on cloud
+    is_cloud_deployment = bool(os.getenv("FLY_APP_NAME") or os.getenv("AWS_EXECUTION_ENV") or os.getenv("KUBERNETES_SERVICE_HOST"))
+    default_allow = "false" if is_cloud_deployment else "true"
+    allow_private = os.getenv("ALLOW_PRIVATE_ENDPOINTS", default_allow).lower() in ("true", "1", "yes")
     if allow_private:
         return True, None
 

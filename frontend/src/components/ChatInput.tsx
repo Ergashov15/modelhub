@@ -8,22 +8,25 @@ import {
   Globe, 
   Video as VideoIcon, 
   Loader2, 
-  Image as ImageIcon 
+  Image as ImageIcon,
+  Zap,
+  Brain,
+  Check
 } from 'lucide-react';
-import type { Settings, FileAttachment } from '../types';
+import type { Settings, FileAttachment, ChatMode } from '../types';
 import { getTranslation, type TranslationKey } from '../i18n/translations';
 import { compressAndResizeImage, extractVideoFrames, formatDuration } from '../utils/media';
 
 interface ChatInputProps {
-  onSendMessage: (message: string, attachments?: FileAttachment[], webSearch?: boolean) => void;
+  onSendMessage: (message: string, attachments?: FileAttachment[], mode?: ChatMode) => void;
   onStop: () => void;
   isStreaming: boolean;
   settings: Settings;
   onOpenSettings: () => void;
   isCentered?: boolean;
   insertedText?: string;
-  isWebSearchActive: boolean;
-  onToggleWebSearch: () => void;
+  chatMode: ChatMode;
+  onChangeChatMode: (mode: ChatMode) => void;
 }
 
 const MAX_IMAGES_LIMIT = 15;
@@ -36,15 +39,28 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onOpenSettings,
   isCentered = false,
   insertedText,
-  isWebSearchActive,
-  onToggleWebSearch,
+  chatMode,
+  onChangeChatMode,
 }) => {
   const [input, setInput] = useState('');
   const [attachments, setAttachments] = useState<FileAttachment[]>([]);
   const [isProcessingMedia, setIsProcessingMedia] = useState(false);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [isModeModalOpen, setIsModeModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isModeModalOpen) {
+        setIsModeModalOpen(false);
+      }
+    };
+    if (isModeModalOpen) {
+      window.addEventListener('keydown', handleKeyDown);
+    }
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isModeModalOpen]);
 
   const t = useCallback(
     (key: TranslationKey) => getTranslation(settings.language, key),
@@ -312,7 +328,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       onOpenSettings();
       return;
     }
-    onSendMessage(input, attachments, isWebSearchActive);
+    onSendMessage(input, attachments, chatMode);
     setInput('');
     setAttachments([]);
     if (textareaRef.current) {
@@ -452,22 +468,26 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               <Paperclip className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-[#047857] dark:text-[#34D399]" />
             </button>
 
-            {/* Web Search toggle button */}
+            {/* Compact Mode Selector Icon Button (Minimalist, human-crafted, no duplicate text/icons) */}
             <button
               type="button"
-              onClick={onToggleWebSearch}
+              onClick={() => setIsModeModalOpen(true)}
               disabled={isStreaming}
-              className={`h-9 sm:h-10 px-2 sm:px-3 flex items-center justify-center gap-1.5 rounded-xl text-xs sm:text-sm font-medium transition-all shrink-0 select-none touch-manipulation mb-0.5 sm:mb-0 ${
-                isWebSearchActive
-                  ? 'bg-[#E6F4EA] dark:bg-[#064E3B]/60 text-[#047857] dark:text-[#34D399] border border-[#86EFAC] shadow-2xs font-semibold'
-                  : 'text-[#6B7280] dark:text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F9FAFB] dark:hover:bg-[#333330] border border-transparent'
+              className={`w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-xl transition-all shrink-0 select-none touch-manipulation mb-0.5 sm:mb-0 border ${
+                chatMode === 'fast'
+                  ? 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30 shadow-2xs'
+                  : chatMode === 'think'
+                  ? 'bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 border-purple-500/30 shadow-2xs'
+                  : 'bg-[#047857]/10 hover:bg-[#047857]/20 text-[#047857] dark:text-[#34D399] border-[#047857]/30 shadow-2xs'
               }`}
-              title={isWebSearchActive ? t('webSearchActive') : t('webSearchInactive')}
+              title={`${t('modeModalTitle')}: ${
+                chatMode === 'fast' ? t('modeFast') : chatMode === 'think' ? t('modeDeepThink') : t('modeWebSearch')
+              }`}
+              aria-label="Muloqot rejimini tanlash"
             >
-              <Globe className={`w-4 h-4 ${isWebSearchActive ? 'text-[#047857] dark:text-[#34D399] animate-pulse' : ''}`} />
-              <span className="hidden sm:inline text-xs sm:text-[13px] leading-none">
-                {t('webSearch')}
-              </span>
+              {chatMode === 'fast' && <Zap className="w-4.5 h-4.5" />}
+              {chatMode === 'think' && <Brain className="w-4.5 h-4.5" />}
+              {chatMode === 'search' && <Globe className="w-4.5 h-4.5" />}
             </button>
 
             {/* Hidden file input supporting up to 15 images, videos, and documents */}
@@ -528,6 +548,153 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </p>
         )}
       </div>
+
+      {/* Responsive Mode Selection Mini Modal / Mobile Bottom Sheet */}
+      {isModeModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/45 dark:bg-black/65 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setIsModeModalOpen(false)}
+        >
+          <div
+            className="w-full sm:max-w-md bg-white dark:bg-[#1E1E1C] border-t sm:border border-[#E5E7EB] dark:border-[#333330] rounded-t-3xl sm:rounded-3xl shadow-2xl p-4 sm:p-5 pb-8 sm:pb-5 animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Mobile drag handle */}
+            <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-gray-700 mx-auto mb-3 sm:hidden" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-[#E5E7EB]/60 dark:border-[#333330]/60">
+              <div>
+                <h3 className="font-semibold text-sm sm:text-base text-[#1F2937] dark:text-[#ECEBE8]">
+                  {t('modeModalTitle')}
+                </h3>
+                <p className="text-xs text-[#6B7280] dark:text-[#9CA3AF] mt-0.5">
+                  {t('modeModalSubtitle')}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsModeModalOpen(false)}
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-[#9CA3AF] hover:text-[#1F2937] dark:hover:text-[#ECEBE8] hover:bg-[#F3F4F6] dark:hover:bg-[#2A2A28] transition-colors"
+                title="Yopish (ESC)"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Mode Cards */}
+            <div className="space-y-2">
+              {/* 1. Fast Mode */}
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeChatMode('fast');
+                  setIsModeModalOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
+                  chatMode === 'fast'
+                    ? 'bg-amber-500/10 border-2 border-amber-500/40 shadow-xs'
+                    : 'bg-[#FAFAFA] dark:bg-[#252523] border border-[#E5E7EB] dark:border-[#333330] hover:border-amber-500/30'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                  <Zap className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs sm:text-sm text-[#1F2937] dark:text-[#ECEBE8]">
+                      {t('modeFast')}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono font-bold">
+                      0.1s
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#6B7280] dark:text-[#9CA3AF] leading-snug mt-0.5">
+                    {t('modeFastDesc')}
+                  </p>
+                </div>
+                {chatMode === 'fast' && (
+                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+
+              {/* 2. Deep-Think Mode */}
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeChatMode('think');
+                  setIsModeModalOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
+                  chatMode === 'think'
+                    ? 'bg-purple-500/10 border-2 border-purple-500/40 shadow-xs'
+                    : 'bg-[#FAFAFA] dark:bg-[#252523] border border-[#E5E7EB] dark:border-[#333330] hover:border-purple-500/30'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
+                  <Brain className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs sm:text-sm text-[#1F2937] dark:text-[#ECEBE8]">
+                      {t('modeDeepThink')}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/15 text-purple-700 dark:text-purple-300 font-mono font-bold">
+                      Mantiq
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#6B7280] dark:text-[#9CA3AF] leading-snug mt-0.5">
+                    {t('modeDeepThinkDesc')}
+                  </p>
+                </div>
+                {chatMode === 'think' && (
+                  <div className="w-5 h-5 rounded-full bg-purple-600 text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+
+              {/* 3. Web Search Mode */}
+              <button
+                type="button"
+                onClick={() => {
+                  onChangeChatMode('search');
+                  setIsModeModalOpen(false);
+                }}
+                className={`w-full flex items-center gap-3 p-3 rounded-2xl text-left transition-all ${
+                  chatMode === 'search'
+                    ? 'bg-[#047857]/10 border-2 border-[#047857]/40 shadow-xs'
+                    : 'bg-[#FAFAFA] dark:bg-[#252523] border border-[#E5E7EB] dark:border-[#333330] hover:border-[#047857]/30'
+                }`}
+              >
+                <div className="w-10 h-10 rounded-xl bg-[#047857]/15 text-[#047857] dark:text-[#34D399] flex items-center justify-center shrink-0">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-xs sm:text-sm text-[#1F2937] dark:text-[#ECEBE8]">
+                      {t('modeWebSearch')}
+                    </span>
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-[#047857]/15 text-[#047857] dark:text-[#34D399] font-mono font-bold">
+                      Online
+                    </span>
+                  </div>
+                  <p className="text-[11px] sm:text-xs text-[#6B7280] dark:text-[#9CA3AF] leading-snug mt-0.5">
+                    {t('modeWebSearchDesc')}
+                  </p>
+                </div>
+                {chatMode === 'search' && (
+                  <div className="w-5 h-5 rounded-full bg-[#047857] text-white flex items-center justify-center shrink-0">
+                    <Check className="w-3 h-3 stroke-[3]" />
+                  </div>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

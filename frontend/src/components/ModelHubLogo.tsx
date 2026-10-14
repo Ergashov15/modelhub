@@ -4,14 +4,12 @@ interface ModelHubLogoProps {
   size?: 'sm' | 'md' | 'lg' | 'xl';
   className?: string;
   showText?: boolean;
-  showBadge?: boolean;
 }
 
 export const ModelHubLogo: React.FC<ModelHubLogoProps> = ({
   size = 'md',
   className = '',
   showText = false,
-  showBadge = true,
 }) => {
   // Dimension definitions
   const sizeClasses = {
@@ -117,11 +115,6 @@ export const ModelHubLogo: React.FC<ModelHubLogoProps> = ({
             <span className="font-bold text-base sm:text-lg tracking-tight text-[#1F2937] dark:text-[#ECEBE8]">
               Model<span className="text-[#047857] dark:text-[#34D399]">Hub</span>
             </span>
-            {showBadge && (
-              <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#E6F4EA] dark:bg-[#064E3B]/40 text-[#047857] dark:text-[#6EE7B7] border border-[#86EFAC]/50">
-                AI
-              </span>
-            )}
           </div>
           <span className="text-xs text-[#6B7280] dark:text-[#9CA3AF] font-medium tracking-wide mt-1 leading-none">
             Workspace

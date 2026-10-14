@@ -25,7 +25,7 @@ from .client import test_endpoint_connection, fetch_available_models, stream_cha
 from .search import search_duckduckgo
 from .db import (
     init_db, create_user, authenticate_user, create_session, get_user_by_token, delete_session,
-    get_user_conversations, save_user_conversations, delete_user_conversation
+    get_user_conversations, save_user_conversations, delete_user_conversation, clear_user_conversations
 )
 
 logger = logging.getLogger("qwen_ui.main")
@@ -160,6 +160,20 @@ async def delete_user_chat(
     delete_user_conversation(user["id"], conv_id)
     return {"success": True}
 
+@app.delete("/api/user/conversations")
+async def clear_all_user_chats(
+    authorization: Optional[str] = Header(None)
+):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Avtorizatsiya talab qilinadi.")
+    token = authorization.replace("Bearer ", "").strip()
+    user = get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Sessiya eskirgan yoki topilmadi.")
+    
+    clear_user_conversations(user["id"])
+    return {"success": True}
+
 @app.post("/api/test-connection", response_model=TestConnectionResponse)
 async def test_connection(req: TestConnectionRequest, request: Request):
     if not req.endpoint or not req.endpoint.strip():
@@ -288,8 +302,13 @@ async def chat_completion(req: ChatRequest, request: Request):
     messages_data = [m.model_dump() for m in req.messages]
     sources = []
 
-    # 4. Web Search Rate Limit & Execution
-    if req.web_search and last_user_query.strip():
+    # 4. Mode Determination: fast (default), think, or search
+    is_search = bool(req.web_search or req.mode == "search")
+    is_fast = bool(req.mode == "fast" or req.think is False)
+    is_think = bool(req.mode == "think" or req.think is True)
+
+    # Web Search Rate Limit & Execution
+    if is_search and last_user_query.strip():
         search_allowed, _ = rate_limiter.is_allowed(f"search:{client_ip}", max_requests=10, window_seconds=60)
         if not search_allowed:
             logger.warning(f"Web search rate limit exceeded for IP: {client_ip}. Proceeding without search.")
@@ -322,6 +341,22 @@ async def chat_completion(req: ChatRequest, request: Request):
             if not has_system:
                 messages_data.insert(0, {"role": "system", "content": web_instruction})
 
+    # Fast Mode: instruct model to answer instantly without thinking or reasoning tokens
+    if is_fast and not is_think:
+        fast_instruction = (
+            "Tezkor rejim: Foydalanuvchi savoliga darhol, qisqa va aniq javob bering. "
+            "Hech qanday ichki mulohazalar (<think>...</think>) yoki ortiqcha kirish so'zlarini yozmang. "
+            "To'g'ridan-to'g'ri masalaning javobiga o'ting."
+        )
+        has_system = False
+        for m in messages_data:
+            if m["role"] == "system":
+                m["content"] = str(m["content"]) + f"\n\n{fast_instruction}"
+                has_system = True
+                break
+        if not has_system:
+            messages_data.insert(0, {"role": "system", "content": fast_instruction})
+
     # 5. System Safety Instruction (Balanced)
     has_system_safety = False
     for m in messages_data:
@@ -340,6 +375,24 @@ async def chat_completion(req: ChatRequest, request: Request):
         "top_p": req.top_p,
         "stream": True,
     }
+
+    # Model parameters for Ollama / vLLM / OpenAI:
+    # 1. keep_alive keeps model loaded in GPU VRAM (RTX 5060) preventing cold starts
+    # 2. think=False stops thinking token generation in Qwen / DeepSeek
+    is_official_openai = "api.openai.com" in req.endpoint.lower()
+    if not is_official_openai:
+        payload["options"] = {"keep_alive": "60m"}
+        if is_fast:
+            payload["think"] = False
+        elif is_think:
+            payload["think"] = True
+    else:
+        if "deepseek" in req.model.lower() or "qwen" in req.model.lower():
+            if is_fast:
+                payload["think"] = False
+            elif is_think:
+                payload["think"] = True
+
     if req.max_tokens is not None and req.max_tokens > 0:
         tokens_to_send = req.max_tokens
         # If client passed an impossibly large max_tokens (e.g. full context length like 262144),

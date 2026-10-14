@@ -1,5 +1,6 @@
 export type ThemeMode = 'system' | 'dark' | 'light';
 export type Language = 'uz' | 'en' | 'ru';
+export type ChatMode = 'fast' | 'think' | 'search';
 
 export interface User {
   id: number;

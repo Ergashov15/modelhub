@@ -15,6 +15,8 @@ class ChatRequest(BaseModel):
     max_tokens: Optional[int] = None
     stream: bool = True
     web_search: Optional[bool] = False
+    mode: Optional[str] = "fast" # "fast", "think", "search"
+    think: Optional[bool] = None
 
 class TestConnectionRequest(BaseModel):
     endpoint: str

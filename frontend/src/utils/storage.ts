@@ -166,12 +166,21 @@ export function importAllChats(jsonString: string): { success: boolean; count: n
 
 export function clearAllChatsStorage(): void {
   try {
-    const index = loadChatIndex();
-    index.forEach((meta) => {
-      localStorage.removeItem(CHAT_MSG_PREFIX + meta.id);
-    });
-    localStorage.removeItem(INDEX_KEY);
-    localStorage.removeItem(ACTIVE_CHAT_KEY);
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (
+        key &&
+        (key.startsWith(CHAT_MSG_PREFIX) ||
+          key === INDEX_KEY ||
+          key === LEGACY_KEY ||
+          key === ACTIVE_CHAT_KEY ||
+          key === 'qwen_ui_conversations')
+      ) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((k) => localStorage.removeItem(k));
   } catch (err) {
     console.error(err);
   }
