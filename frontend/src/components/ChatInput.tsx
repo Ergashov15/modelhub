@@ -92,9 +92,23 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  const DANGEROUS_EXTENSIONS = [
+    '.exe', '.bat', '.cmd', '.ps1', '.sh', '.vbs', '.msi', '.dll', '.scr',
+    '.jar', '.com', '.hta', '.html', '.htm', '.php', '.phtml', '.asp', '.aspx', '.jsp'
+  ];
+
+  const sanitizeSvg = (svgText: string): string => {
+    return svgText
+      .replace(/<script[\s\S]*?<\/script>/gi, '')
+      .replace(/\son\w+\s*=\s*(['"]).*?\1/gi, '')
+      .replace(/(?:href|xlink:href)\s*=\s*(['"])\s*javascript:.*?\1/gi, '$1#$1')
+      .replace(/<(?:foreignObject|iframe|embed|object)[\s\S]*?<\/(?:foreignObject|iframe|embed|object)>/gi, '')
+      .replace(/<(?:foreignObject|iframe|embed|object)[^>]*\/?>/gi, '');
+  };
+
   /**
    * Core helper to process files (from file picker, paste, or drag-and-drop).
-   * Enforces 15 images limit, handles image compression, and extracts video frames.
+   * Enforces security validations, 15 images limit, SVG XSS sanitization, and media processing.
    */
   const processFiles = useCallback(async (files: File[]) => {
     if (!files || files.length === 0) return;
@@ -104,9 +118,32 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     const imageFilesToProcess: File[] = [];
     const otherFilesToProcess: File[] = [];
 
-    // Separate images, videos, and documents
+    // 1. File Upload Security: Block dangerous script and executable extensions
+    const safeFiles: File[] = [];
     for (const file of files) {
-      const isImg = file.type.startsWith('image/');
+      const lowerName = file.name.toLowerCase();
+      const hasDangerousExt = DANGEROUS_EXTENSIONS.some((ext) => lowerName.endsWith(ext));
+      if (hasDangerousExt) {
+        alert(
+          settings.language === 'uz'
+            ? `Xavfsizlik cheklovi: "${file.name}" fayl turi dastur xavfsizligini ta'minlash maqsadida qabul qilinmaydi.`
+            : settings.language === 'ru'
+            ? `Ограничение безопасности: Файл "${file.name}" заблокирован в целях безопасности.`
+            : `Security restriction: File "${file.name}" is blocked for security reasons.`
+        );
+        continue;
+      }
+      safeFiles.push(file);
+    }
+
+    if (safeFiles.length === 0) {
+      setIsProcessingMedia(false);
+      return;
+    }
+
+    // Separate images, videos, and documents
+    for (const file of safeFiles) {
+      const isImg = file.type.startsWith('image/') || /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name);
       if (isImg) {
         imageFilesToProcess.push(file);
       } else {
@@ -128,7 +165,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         for (const file of allowedImages) {
           try {
-            const dataUrl = await compressAndResizeImage(file);
+            let dataUrl = '';
+            // If SVG: sanitize XML to eliminate Stored XSS before creating preview URL
+            if (file.type === 'image/svg+xml' || file.name.toLowerCase().endsWith('.svg')) {
+              const rawSvg = await file.text();
+              const safeSvg = sanitizeSvg(rawSvg);
+              dataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(safeSvg)}`;
+            } else {
+              dataUrl = await compressAndResizeImage(file);
+            }
+
             const attId = 'att-img-' + Date.now() + Math.random().toString(36).substring(2, 6);
             newAttachments.push({
               id: attId,
@@ -495,7 +541,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               ref={fileInputRef}
               type="file"
               multiple
-              accept="image/*,video/*,.txt,.pdf,.md,.py,.js,.ts,.tsx,.jsx,.json,.csv,.log,.html,.css"
+              accept="image/*,video/*,.txt,.pdf,.md,.py,.js,.ts,.tsx,.jsx,.json,.csv,.log,.sql,.css"
               className="hidden"
               onChange={handleFileSelect}
             />

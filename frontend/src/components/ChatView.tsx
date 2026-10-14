@@ -11,10 +11,7 @@ import {
   Globe,
   ExternalLink,
   X,
-  Maximize2,
-  Brain,
-  ChevronDown,
-  ChevronRight
+  Maximize2
 } from 'lucide-react';
 import type { ChatMessage, Settings, FileAttachment } from '../types';
 import { getTranslation, type TranslationKey } from '../i18n/translations';
@@ -38,7 +35,7 @@ function getThinkingStatus(
 ): ThinkingStatus {
   if (!prevMessage) {
     return {
-      text: lang === 'uz' ? 'Fikrlanmoqda...' : lang === 'ru' ? 'Думаю...' : 'Thinking...',
+      text: lang === 'uz' ? 'Javob tayyorlanmoqda...' : lang === 'ru' ? 'Подготовка ответа...' : 'Preparing response...',
       icon: 'sparkles',
     };
   }
@@ -97,83 +94,53 @@ function getThinkingStatus(
     };
   }
 
-  // 6. Default reasoning
+  // 6. Default response preparation
   return {
-    text: lang === 'uz' ? 'Fikrlanmoqda...' : lang === 'ru' ? 'Думаю...' : 'Thinking...',
+    text: lang === 'uz' ? 'Javob tayyorlanmoqda...' : lang === 'ru' ? 'Подготовка ответа...' : 'Preparing response...',
     icon: 'sparkles',
   };
 }
 
+/**
+ * Filter out internal reasoning / <think>...</think> monologue.
+ * The user only sees "... loading" while thinking, and the clean answer once ready.
+ */
 function parseThoughtAndContent(content: string) {
-  if (!content) return { thought: null, response: '', isThinking: false };
+  if (!content) return { response: '', isThinking: false };
 
-  const thinkMatch = content.match(/^<think>([\s\S]*?)(?:<\/think>|$)([\s\S]*)$/);
+  // 1. Content starts with optional whitespace and <think>
+  const thinkMatch = content.match(/^\s*<think>([\s\S]*?)(?:<\/think>|$)([\s\S]*)$/);
   if (thinkMatch) {
     const isClosed = content.includes('</think>');
     return {
-      thought: thinkMatch[1].trim(),
       response: isClosed ? thinkMatch[2].trimStart() : '',
       isThinking: !isClosed,
     };
   }
 
-  return { thought: null, response: content, isThinking: false };
-}
-
-/**
- * Collapsible Thinking/Reasoning block for live streaming thoughts (Deep-Think mode)
- */
-const ThinkingBlock: React.FC<{
-  thought: string;
-  isThinking: boolean;
-  language: 'uz' | 'en' | 'ru';
-}> = ({ thought, isThinking, language }) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(isThinking);
-
-  useEffect(() => {
-    if (isThinking) {
-      setIsExpanded(true);
+  // 2. <think> tag located anywhere else in content
+  const openIdx = content.indexOf('<think>');
+  if (openIdx !== -1) {
+    const closeIdx = content.indexOf('</think>');
+    if (closeIdx === -1) {
+      // Still inside thinking tag: return text before <think> (if any)
+      const beforeThink = content.substring(0, openIdx).trim();
+      return {
+        response: beforeThink,
+        isThinking: true,
+      };
+    } else {
+      // Closed: strip all <think>...</think> blocks
+      const cleaned = content.replace(/<think>[\s\S]*?<\/think>/g, '').trimStart();
+      return {
+        response: cleaned,
+        isThinking: false,
+      };
     }
-  }, [isThinking]);
+  }
 
-  const t = (key: TranslationKey) => getTranslation(language, key);
-
-  return (
-    <div className="w-full mb-3 rounded-2xl border border-purple-200/70 dark:border-purple-900/40 bg-purple-50/50 dark:bg-purple-950/20 overflow-hidden transition-all shadow-2xs">
-      <button
-        type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-medium text-purple-800 dark:text-purple-300 hover:bg-purple-100/50 dark:hover:bg-purple-900/30 transition-colors select-none"
-      >
-        <div className="flex items-center gap-2 min-w-0">
-          <Brain className={`w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0 ${isThinking ? 'animate-pulse' : ''}`} />
-          <span className="truncate font-semibold text-xs sm:text-[13px]">
-            {isThinking ? t('thinkingInProgress') : t('thinkingFinished')}
-          </span>
-          {isThinking && (
-            <span className="flex gap-1 items-center ml-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-1.5 h-1.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '300ms' }} />
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 text-purple-600 dark:text-purple-400 shrink-0">
-          <span className="text-[11px] opacity-80 hidden sm:inline">
-            {isExpanded ? (language === 'uz' ? 'Yashirish' : language === 'ru' ? 'Скрыть' : 'Collapse') : (language === 'uz' ? 'Ko‘rish' : language === 'ru' ? 'Показать' : 'Expand')}
-          </span>
-          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-        </div>
-      </button>
-
-      {isExpanded && (
-        <div className="px-3.5 pb-3.5 pt-2 text-xs sm:text-[13px] text-gray-700 dark:text-gray-300 font-sans leading-relaxed border-t border-purple-200/50 dark:border-purple-900/30 whitespace-pre-wrap select-text max-h-96 overflow-y-auto no-scrollbar border-l-2 border-l-purple-500/70 ml-2 pl-3 my-1">
-          {thought}
-        </div>
-      )}
-    </div>
-  );
-};
+  return { response: content, isThinking: false };
+}
 
 /**
  * Message attachments display component supporting video playback,
@@ -364,7 +331,7 @@ export const ChatView: React.FC<ChatViewProps> = ({
           const prevMessage = index > 0 ? messages[index - 1] : undefined;
           const thinkingStatus = getThinkingStatus(prevMessage, settings.language);
           const parsed = parseThoughtAndContent(message.content);
-          const displayResponse = parsed.response || (!parsed.thought ? message.content : '');
+          const displayResponse = parsed.response;
 
           if (isUser) {
             return (
@@ -411,21 +378,12 @@ export const ChatView: React.FC<ChatViewProps> = ({
                   </div>
                 ) : (
                   <>
-                    {/* 1. Real-time Thinking Block (Deep-Think mode) */}
-                    {parsed.thought && (
-                      <ThinkingBlock
-                        thought={parsed.thought}
-                        isThinking={parsed.isThinking}
-                        language={settings.language}
-                      />
-                    )}
-
-                    {/* 2. Loading indicator before first token arrives */}
-                    {message.isStreaming && !parsed.thought && !displayResponse && (
-                      <div className="flex items-center gap-2.5 py-2.5 text-xs sm:text-sm text-[#6B7280] dark:text-[#9CA3AF] my-1.5 select-none animate-pulse">
+                    {/* Loading indicator while waiting for response (during thinking or initial generation) */}
+                    {message.isStreaming && !displayResponse && (
+                      <div className="flex items-center gap-2.5 py-2.5 text-xs sm:text-sm text-[#6B7280] dark:text-[#9CA3AF] my-1.5 select-none">
                         {message.sources && message.sources.length > 0 ? (
                           <>
-                            <Globe className="w-4 h-4 text-[#047857] dark:text-[#34D399]" />
+                            <Globe className="w-4 h-4 text-[#047857] dark:text-[#34D399] animate-spin" />
                             <span className="font-medium text-[#1F2937] dark:text-[#ECEBE8]">
                               {t('searchingWeb')}
                             </span>
@@ -438,10 +396,10 @@ export const ChatView: React.FC<ChatViewProps> = ({
                             </span>
                           </>
                         )}
-                        <span className="flex gap-1.5 items-center ml-1.5">
-                          <span className="w-2 h-2 rounded-full bg-[#047857] animate-bounce" style={{ animationDelay: '0ms' }} />
-                          <span className="w-2 h-2 rounded-full bg-[#047857] animate-bounce" style={{ animationDelay: '150ms' }} />
-                          <span className="w-2 h-2 rounded-full bg-[#047857] animate-bounce" style={{ animationDelay: '300ms' }} />
+                        <span className="inline-flex items-center gap-1.5 ml-1">
+                          <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-[#047857] dark:bg-[#34D399] animate-bounce" style={{ animationDelay: '300ms' }} />
                         </span>
                       </div>
                     )}
@@ -456,6 +414,17 @@ export const ChatView: React.FC<ChatViewProps> = ({
                           isStreaming={message.isStreaming}
                           sources={message.sources}
                         />
+                      </div>
+                    )}
+
+                    {/* Fallback if user stopped generation during thinking phase or response was empty */}
+                    {!message.isStreaming && !displayResponse && !message.error && (
+                      <div className="text-xs text-[#9CA3AF] dark:text-[#6B7280] italic py-1">
+                        {settings.language === 'uz'
+                          ? 'Javob to‘xtatildi yoki bo‘sh qaytarildi.'
+                          : settings.language === 'ru'
+                          ? 'Ответ остановлен или пуст.'
+                          : 'Response stopped or empty.'}
                       </div>
                     )}
 
